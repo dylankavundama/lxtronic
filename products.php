@@ -154,11 +154,11 @@ $low_stock = array_filter($products, fn($p) => $p['stock_quantity'] <= $p['min_s
                     <input type="number" name="min_stock_threshold" id="prodThreshold" value="5" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Prix d'achat (FCFA)</label>
+                    <label class="form-label">Prix d'achat (USD)</label>
                     <input type="number" step="0.01" name="buy_price" id="prodBuy" required class="form-control">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Prix de vente (FCFA)</label>
+                    <label class="form-label">Prix de vente (USD)</label>
                     <input type="number" step="0.01" name="sell_price" id="prodSell" required class="form-control">
                 </div>
                 <div class="form-group">

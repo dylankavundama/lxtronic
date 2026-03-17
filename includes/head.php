@@ -13,3 +13,22 @@
   // Disable Tailwind's preflight/reset to avoid conflicts with our CSS
   tailwind.config = { corePlugins: { preflight: false } }
 </script>
+
+<!-- Splash Screen Loader -->
+<div id="page-loader">
+    <div class="loader-content">
+        <img src="logo.jpg" alt="LxTronic" class="loader-logo">
+        <h1 class="loader-title">LxTronic</h1>
+        <p class="loader-slogan">Innovation At Your Service</p>
+        <div class="loader-spinner"></div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('page-loader');
+        setTimeout(() => {
+            loader.classList.add('hidden');
+        }, 800); // Durée minimale visible pour l'effet
+    });
+</script>
