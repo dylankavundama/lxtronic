@@ -40,7 +40,7 @@ $low_stock = array_filter($products, fn($p) => $p['stock_quantity'] <= $p['min_s
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Produits - QuincaTech</title>
+    <title>Produits - LxTronic</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>

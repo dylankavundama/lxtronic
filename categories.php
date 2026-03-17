@@ -34,7 +34,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY name ASC")->fetchAl
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Catégories - QuincaTech</title>
+    <title>Catégories - LxTronic</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>

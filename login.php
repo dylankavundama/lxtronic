@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Connexion - QuincaTech</title>
+    <title>Connexion - LxTronic</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>
@@ -43,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-box">
         <!-- Logo -->
         <div class="login-logo-wrap">
-            <img src="logo.jpg" alt="QuincaTech" class="animate-bounce" style="width:90px;height:90px;object-fit:contain;border-radius:20px;margin-bottom:1rem;box-shadow:0 8px 32px rgba(37,99,235,0.2);">
-            <h1 class="login-logo-title">QuincaTech</h1>
-            <p class="login-logo-sub">Gestion de Quincaillerie Moderne</p>
+            <img src="logo.jpg" alt="LxTronic" class="animate-bounce" style="width:90px;height:90px;object-fit:contain;border-radius:20px;margin-bottom:1rem;box-shadow:0 8px 32px rgba(37,99,235,0.2);">
+            <h1 class="login-logo-title">LxTronic</h1>
+            <p class="login-logo-sub">Innovation At Your Service</p>
         </div>
 
         <!-- Card -->
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
 
-        <p class="login-footer">&copy; <?= date('Y') ?> QuincaTech — Tous droits réservés.</p>
+        <p class="login-footer">&copy; <?= date('Y') ?> LxTronic — Tous droits réservés.</p>
     </div>
 </div>
 </body>

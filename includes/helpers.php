@@ -30,9 +30,27 @@ function require_admin() {
 }
 
 /**
- * Formatage des prix
+ * Récupère un paramètre de la base de données
  */
-function format_price($amount) {
-    return number_format($amount, 2, ',', ' ') . ' FCFA';
+function get_setting($key, $default = null) {
+    global $pdo;
+    static $settings = [];
+    if (empty($settings)) {
+        $stmt = $pdo->query("SELECT setting_key, setting_value FROM settings");
+        while ($row = $stmt->fetch()) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+    }
+    return $settings[$key] ?? $default;
+}
+
+/**
+ * Formatage des prix selon la devise
+ */
+function format_price($amount, $currency = 'USD') {
+    if ($currency === 'CDF') {
+        return number_format($amount, 0, '.', ' ') . ' FC';
+    }
+    return '$' . number_format($amount, 2, '.', ' ');
 }
 ?>

@@ -1,6 +1,6 @@
--- Database: quincatech
-CREATE DATABASE IF NOT EXISTS quincatech;
-USE quincatech;
+-- Database: lxtronic
+CREATE DATABASE IF NOT EXISTS lxtronic;
+USE lxtronic;
 
 -- Table: users
 CREATE TABLE IF NOT EXISTS users (
@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS sales (
     total_amount DECIMAL(10, 2) NOT NULL,
     payment_type ENUM('comptant', 'credit') NOT NULL,
     status ENUM('paye', 'dette', 'partiel') DEFAULT 'paye',
+    currency ENUM('USD', 'CDF') DEFAULT 'USD',
+    exchange_rate DECIMAL(10, 2) DEFAULT 1.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
@@ -75,6 +77,7 @@ CREATE TABLE IF NOT EXISTS payments (
     sale_id INT,
     client_id INT,
     amount_paid DECIMAL(10, 2) NOT NULL,
+    currency ENUM('USD', 'CDF') DEFAULT 'USD',
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
@@ -86,6 +89,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     user_id INT,
     title VARCHAR(255) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
+    currency ENUM('USD', 'CDF') DEFAULT 'USD',
     description TEXT,
     expense_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -95,3 +99,13 @@ CREATE TABLE IF NOT EXISTS expenses (
 -- Insert default admin user (password: admin123)
 -- Using SHA2 hash for example, but password_hash() should be used in PHP
 INSERT INTO users (username, password, role) VALUES ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+
+-- Table: settings
+CREATE TABLE IF NOT EXISTS settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL
+);
+
+INSERT INTO settings (setting_key, setting_value) VALUES ('usd_to_cdf', '2800');
+INSERT INTO settings (setting_key, setting_value) VALUES ('app_name', 'LxTronic');
+INSERT INTO settings (setting_key, setting_value) VALUES ('app_slogan', 'Innovation At Your Service');

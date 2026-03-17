@@ -18,7 +18,7 @@ $items = $stmt->fetchAll();
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Facture #<?= $sale_id ?> - QuincaTech</title>
+    <title>Facture #<?= $sale_id ?> - LxTronic</title>
     <?php include 'includes/head.php'; ?>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet">
 </head>
@@ -75,8 +75,8 @@ $items = $stmt->fetchAll();
                 <tr>
                     <td><?= htmlspecialchars($it['product_name']) ?></td>
                     <td style="text-align:center;"><?= $it['quantity'] ?></td>
-                    <td style="text-align:right;"><?= format_price($it['unit_price']) ?></td>
-                    <td style="font-weight:700;"><?= format_price($it['subtotal']) ?></td>
+                    <td style="text-align:right;"><?= format_price($it['unit_price'], $sale['currency']) ?></td>
+                    <td style="font-weight:700;"><?= format_price($it['subtotal'], $sale['currency']) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -86,15 +86,15 @@ $items = $stmt->fetchAll();
             <div class="invoice-totals-table">
                 <div class="invoice-totals-row">
                     <span>Sous-total HT</span>
-                    <span><?= format_price($sale['total_amount'] * 0.82) ?></span>
+                    <span><?= format_price($sale['total_amount'] * 0.82, $sale['currency']) ?></span>
                 </div>
                 <div class="invoice-totals-row">
                     <span>TVA (18%)</span>
-                    <span><?= format_price($sale['total_amount'] * 0.18) ?></span>
+                    <span><?= format_price($sale['total_amount'] * 0.18, $sale['currency']) ?></span>
                 </div>
                 <div class="invoice-totals-final">
                     <span>NET À PAYER</span>
-                    <span><?= format_price($sale['total_amount']) ?></span>
+                    <span><?= format_price($sale['total_amount'], $sale['currency']) ?></span>
                 </div>
                 <div style="margin-top:1rem; text-align:right;">
                     <span class="badge badge-slate" style="font-size:11px;letter-spacing:0.08em;">
@@ -105,7 +105,7 @@ $items = $stmt->fetchAll();
         </div>
 
         <div class="invoice-footer">
-            Merci de votre confiance. — QuincaTech
+            Merci de votre confiance. — LxTronic
         </div>
     </div>
 </div>

@@ -4,15 +4,17 @@ require_once 'includes/helpers.php';
 check_auth();
 
 $message = ""; $error = "";
+$usd_to_cdf = (float)get_setting('usd_to_cdf', 2800);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'save') {
         $title = trim($_POST['title'] ?? '');
         $amount = (float)($_POST['amount'] ?? 0);
+        $currency = $_POST['currency'] ?? 'USD';
         $description = trim($_POST['description'] ?? '');
         $date = $_POST['expense_date'] ?? date('Y-m-d');
         if (!empty($title) && $amount > 0) {
-            $pdo->prepare("INSERT INTO expenses (user_id,title,amount,description,expense_date) VALUES(?,?,?,?,?)")->execute([$_SESSION['user_id'],$title,$amount,$description,$date]);
+            $pdo->prepare("INSERT INTO expenses (user_id,title,amount,currency,description,expense_date) VALUES(?,?,?,?,?,?)")->execute([$_SESSION['user_id'],$title,$amount,$currency,$description,$date]);
             $message = "Dépense enregistrée.";
         }
     } elseif ($_POST['action'] === 'delete') {
@@ -22,12 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 $expenses = $pdo->query("SELECT e.*, u.username FROM expenses e JOIN users u ON e.user_id=u.id ORDER BY e.expense_date DESC LIMIT 50")->fetchAll();
-$total_month = $pdo->query("SELECT SUM(amount) FROM expenses WHERE MONTH(expense_date)=MONTH(CURDATE()) AND YEAR(expense_date)=YEAR(CURDATE())")->fetchColumn() ?: 0;
+
+// Totaux du mois par devise
+$total_usd = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='USD' AND MONTH(expense_date)=MONTH(CURDATE()) AND YEAR(expense_date)=YEAR(CURDATE())")->fetchColumn() ?: 0;
+$total_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF' AND MONTH(expense_date)=MONTH(CURDATE()) AND YEAR(expense_date)=YEAR(CURDATE())")->fetchColumn() ?: 0;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Dépenses - QuincaTech</title>
+    <title>Dépenses - LxTronic</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>
@@ -37,7 +42,11 @@ $total_month = $pdo->query("SELECT SUM(amount) FROM expenses WHERE MONTH(expense
         <header class="page-header">
             <div>
                 <h1>Gestion des Dépenses</h1>
-                <p>Suivi des sorties d'argent — Total ce mois-ci : <strong class="text-danger"><?= format_price($total_month) ?></strong></p>
+                <p>
+                    Budget mensuel : 
+                    <strong class="text-danger"><?= format_price($total_usd, 'USD') ?></strong> et 
+                    <strong class="text-danger"><?= format_price($total_cdf, 'CDF') ?></strong>
+                </p>
             </div>
             <button onclick="document.getElementById('expModal').classList.add('open')" class="btn btn-danger btn-lg">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -65,7 +74,7 @@ $total_month = $pdo->query("SELECT SUM(amount) FROM expenses WHERE MONTH(expense
                                 </td>
                                 <td><?= date('d/m/Y',strtotime($e['expense_date'])) ?></td>
                                 <td class="text-muted"><?= htmlspecialchars($e['username']) ?></td>
-                                <td class="col-amount-danger">− <?= format_price($e['amount']) ?></td>
+                                <td class="col-amount-danger">− <?= format_price($e['amount'], $e['currency']) ?></td>
                                 <td>
                                     <form method="POST" onsubmit="return confirm('Supprimer ?');" style="display:flex;justify-content:flex-end;">
                                         <input type="hidden" name="action" value="delete">
@@ -95,9 +104,18 @@ $total_month = $pdo->query("SELECT SUM(amount) FROM expenses WHERE MONTH(expense
                 <label class="form-label">Titre / Objet</label>
                 <input type="text" name="title" required class="form-control" placeholder="Ex: Loyer du magasin">
             </div>
-            <div class="form-group">
-                <label class="form-label">Montant (FCFA)</label>
-                <input type="number" step="0.01" name="amount" required class="form-control form-control-lg" style="font-weight:800;color:var(--color-danger);">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Montant</label>
+                    <input type="number" step="0.01" name="amount" required class="form-control form-control-lg" style="font-weight:800;color:var(--color-danger);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Devise</label>
+                    <select name="currency" class="form-control form-control-lg">
+                        <option value="USD">USD ($)</option>
+                        <option value="CDF">CDF (FC)</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Date</label>

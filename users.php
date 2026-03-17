@@ -43,7 +43,7 @@ $users = $pdo->query("SELECT id,username,role,created_at FROM users ORDER BY use
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Utilisateurs - QuincaTech</title>
+    <title>Utilisateurs - LxTronic</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>

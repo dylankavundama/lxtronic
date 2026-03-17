@@ -8,7 +8,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Historique des Ventes - QuincaTech</title>
+    <title>Historique des Ventes - LxTronic</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>
@@ -51,7 +51,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
                                 <td class="col-name"><?= htmlspecialchars($s['client_name']?:'Client de passage') ?></td>
                                 <td class="text-muted"><?= htmlspecialchars($s['seller']) ?></td>
                                 <td><span class="badge <?= $s['payment_type']==='credit'?'badge-red':'badge-green' ?>"><?= $s['payment_type'] ?></span></td>
-                                <td class="col-amount"><?= format_price($s['total_amount']) ?></td>
+                                <td class="col-amount"><?= format_price($s['total_amount'], $s['currency']) ?></td>
                                 <td style="text-align:right;">
                                     <a href="invoice.php?id=<?= $s['id'] ?>" class="btn btn-ghost" style="padding:6px 14px;font-size:0.8rem;border-radius:10px;">
                                         Voir Facture
