@@ -52,7 +52,11 @@ if (basename($_SERVER['PHP_SELF']) == 'sidebar.php') {
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2"></path></svg>
                     <span class="font-medium">Clients / Dettes</span>
                 </a>
-                <a href="reports.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                <a href="expenses.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group <?= (basename($_SERVER['PHP_SELF']) == 'expenses.php') ? 'bg-red-600 text-white shadow-lg shadow-red-900/20' : '' ?>">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"></path></svg>
+                    <span class="font-medium">Dépenses</span>
+                </a>
+                <a href="reports.php" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group <?= (basename($_SERVER['PHP_SELF']) == 'reports.php') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : '' ?>">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-width="2"></path></svg>
                     <span class="font-medium">Rapports</span>
                 </a>
