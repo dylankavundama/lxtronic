@@ -1,169 +1,161 @@
 <?php
 require_once 'config/db.php';
 require_once 'includes/helpers.php';
-require_admin(); // Sécurité : Seul l'admin a accès
+require_admin();
 
 $filter = $_GET['filter'] ?? 'daily';
-$date_query = "DATE(s.created_at) = CURDATE()";
-$label = "aujourd'hui";
-
 if ($filter === 'monthly') {
-    $date_query = "MONTH(s.created_at) = MONTH(CURDATE()) AND YEAR(s.created_at) = YEAR(CURDATE())";
+    $date_query = "MONTH(s.created_at)=MONTH(CURDATE()) AND YEAR(s.created_at)=YEAR(CURDATE())";
     $label = "ce mois-ci";
 } elseif ($filter === 'yearly') {
-    $date_query = "YEAR(s.created_at) = YEAR(CURDATE())";
+    $date_query = "YEAR(s.created_at)=YEAR(CURDATE())";
     $label = "cette année";
+} else {
+    $date_query = "DATE(s.created_at)=CURDATE()";
+    $label = "aujourd'hui";
 }
 
-// 1. Total Sales and Benefits
-$stats = $pdo->query("SELECT 
-    SUM(s.total_amount) as total_sales,
-    SUM(si.quantity * (si.unit_price - p.buy_price)) as total_profit
-    FROM sales s
-    JOIN sale_items si ON s.id = si.sale_id
-    JOIN products p ON si.product_id = p.id
-    WHERE $date_query")->fetch();
-
-// 1.1 Total Expenses
-$total_expenses = $pdo->query("SELECT SUM(amount) FROM expenses WHERE $date_query")->fetchColumn() ?: 0;
-$net_profit = ($stats['total_profit'] ?: 0) - $total_expenses;
-
-// 2. Top Products
-$top_products = $pdo->query("SELECT 
-    p.name, SUM(si.quantity) as total_qty
-    FROM sale_items si
-    JOIN products p ON si.product_id = p.id
-    JOIN sales s ON si.sale_id = s.id
-    WHERE $date_query
-    GROUP BY p.id
-    ORDER BY total_qty DESC
-    LIMIT 5")->fetchAll();
-
-// 3. Sales History for the period
-$sales_history = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller_name 
-    FROM sales s 
-    LEFT JOIN clients c ON s.client_id = c.id 
-    LEFT JOIN users u ON s.user_id = u.id
-    WHERE $date_query 
-    ORDER BY s.created_at DESC")->fetchAll();
-
-// 4. Debt Status
+$stats = $pdo->query("SELECT SUM(s.total_amount) as sales, SUM(si.quantity*(si.unit_price-p.buy_price)) as profit FROM sales s JOIN sale_items si ON s.id=si.sale_id JOIN products p ON si.product_id=p.id WHERE $date_query")->fetch();
+$total_expenses = $pdo->query("SELECT SUM(amount) FROM expenses WHERE expense_date >= CURDATE() - INTERVAL 1 " . ($filter==='yearly'?'YEAR':($filter==='monthly'?'MONTH':'DAY')))->fetchColumn() ?: 0;
+$net_profit = ($stats['profit'] ?: 0) - $total_expenses;
 $total_debt = $pdo->query("SELECT SUM(total_debt) FROM clients")->fetchColumn() ?: 0;
-$total_stock_value = $pdo->query("SELECT SUM(stock_quantity * buy_price) FROM products")->fetchColumn() ?: 0;
+$total_stock_value = $pdo->query("SELECT SUM(stock_quantity*buy_price) FROM products")->fetchColumn() ?: 0;
+
+$top_products = $pdo->query("SELECT p.name, SUM(si.quantity) as qty FROM sale_items si JOIN products p ON si.product_id=p.id JOIN sales s ON si.sale_id=s.id WHERE $date_query GROUP BY p.id ORDER BY qty DESC LIMIT 5")->fetchAll();
+$history = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FROM sales s LEFT JOIN clients c ON s.client_id=c.id LEFT JOIN users u ON s.user_id=u.id WHERE $date_query ORDER BY s.created_at DESC")->fetchAll();
+$max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
 ?>
 <!DOCTYPE html>
-<html lang="fr" class="bg-[#F8FAFC]">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapports Financiers - QuincaTech</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Outfit', sans-serif; }</style>
+    <title>Rapports - QuincaTech</title>
+    <?php include 'includes/head.php'; ?>
 </head>
-<body class="flex">
+<body>
+<div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
-
-    <main class="ml-64 p-8 flex-1">
-        <header class="flex justify-between items-center mb-10">
+    <main class="main-content">
+        <header class="page-header">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">Rapports & Statistiques</h1>
-                <p class="text-slate-500 mt-1">Analyse des performances de la quincaillerie.</p>
+                <h1>Rapports & Statistiques</h1>
+                <p>Analyse des performances — <strong><?= $label ?></strong></p>
             </div>
-            <div class="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
-                <a href="?filter=daily" class="px-6 py-2 rounded-xl text-sm font-bold transition-all <?= $filter=='daily' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50' ?>">Journalier</a>
-                <a href="?filter=monthly" class="px-6 py-2 rounded-xl text-sm font-bold transition-all <?= $filter=='monthly' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50' ?>">Mensuel</a>
-                <a href="?filter=yearly" class="px-6 py-2 rounded-xl text-sm font-bold transition-all <?= $filter=='yearly' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50' ?>">Annuel</a>
+            <div class="filter-bar">
+                <a href="?filter=daily" class="filter-btn <?= $filter==='daily'?'active':'' ?>">Journalier</a>
+                <a href="?filter=monthly" class="filter-btn <?= $filter==='monthly'?'active':'' ?>">Mensuel</a>
+                <a href="?filter=yearly" class="filter-btn <?= $filter==='yearly'?'active':'' ?>">Annuel</a>
             </div>
         </header>
 
-        <!-- Dynamic Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Ventes Totales</p>
-                <h3 class="text-2xl font-black text-slate-800"><?= format_price($stats['total_sales'] ?: 0) ?></h3>
-                <p class="text-[10px] text-blue-600 mt-2 font-bold uppercase tracking-tighter">Période : <?= $label ?></p>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden">
-                <div class="relative z-10">
-                    <p class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Marge Brute</p>
-                    <h3 class="text-2xl font-black text-blue-600"><?= format_price($stats['total_profit'] ?: 0) ?></h3>
-                    <p class="text-[10px] text-blue-400 mt-2 font-bold uppercase tracking-tighter">Bénéfice sur les ventes</p>
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-green">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <p class="stat-label">Ventes Totales</p>
+                    <h3 class="stat-value" style="font-size:1.2rem;"><?= format_price($stats['sales']??0) ?></h3>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-3xl border border-red-100 shadow-sm relative overflow-hidden">
-                <div class="relative z-10">
-                    <p class="text-xs font-bold text-red-400 uppercase tracking-widest mb-1">Dépenses</p>
-                    <h3 class="text-2xl font-black text-red-600"><?= format_price($total_expenses) ?></h3>
-                    <p class="text-[10px] text-red-400 mt-2 font-bold uppercase tracking-tighter">Charges de la période</p>
+            <div class="stat-card" style="border-color:var(--color-primary-light);">
+                <div class="stat-icon stat-icon-blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                </div>
+                <div>
+                    <p class="stat-label">Marge Brute</p>
+                    <h3 class="stat-value" style="font-size:1.2rem;color:var(--color-primary);"><?= format_price($stats['profit']??0) ?></h3>
                 </div>
             </div>
-            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden">
-                <div class="relative z-10 text-white">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Bénéfice Net</p>
-                    <h3 class="text-2xl font-black <?= $net_profit >= 0 ? 'text-green-400' : 'text-red-400' ?>"><?= format_price($net_profit) ?></h3>
-                    <p class="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-tighter">Résultat final</p>
+            <div class="stat-card" style="border-color:var(--color-danger-light);">
+                <div class="stat-icon stat-icon-red">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <p class="stat-label">Dépenses</p>
+                    <h3 class="stat-value" style="font-size:1.2rem;color:var(--color-danger);"><?= format_price($total_expenses) ?></h3>
+                </div>
+            </div>
+            <div class="stat-card" style="background:var(--color-slate-900);border-color:var(--color-slate-800);">
+                <div class="stat-icon" style="background:rgba(255,255,255,0.1);color:<?= $net_profit>=0?'#4ade80':'#f87171' ?>;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                <div>
+                    <p class="stat-label" style="color:var(--color-slate-400);">Bénéfice Net</p>
+                    <h3 class="stat-value" style="font-size:1.2rem;color:<?= $net_profit>=0?'#4ade80':'#f87171' ?>;"><?= format_price($net_profit) ?></h3>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Table of Sales -->
-            <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="p-6 border-b border-slate-50 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 uppercase tracking-widest text-sm">Détails des transactions</h3>
+        <div class="dashboard-grid">
+            <!-- Transactions Table -->
+            <div class="card">
+                <div style="padding:1.5rem 1.5rem 0; margin-bottom:0;">
+                    <h3 class="section-title">Transactions de la période</h3>
                 </div>
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase">
-                        <tr>
-                            <th class="px-6 py-4">ID</th>
-                            <th class="px-6 py-4">Client</th>
-                            <th class="px-6 py-4">Vendeur</th>
-                            <th class="px-6 py-4">Type</th>
-                            <th class="px-6 py-4 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                        <?php foreach($sales_history as $s): ?>
-                        <tr class="hover:bg-slate-50 text-sm">
-                            <td class="px-6 py-4 font-bold text-slate-400">#<?= $s['id'] ?></td>
-                            <td class="px-6 py-4 font-bold text-slate-800"><?= $s['client_name'] ?: 'Passage' ?></td>
-                            <td class="px-6 py-4 text-slate-500"><?= $s['seller_name'] ?></td>
-                            <td class="px-6 py-4 capitalize">
-                                <span class="px-2 py-1 rounded text-[10px] font-bold <?= $s['payment_type']=='credit' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' ?>">
-                                    <?= $s['payment_type'] ?>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right font-black"><?= format_price($s['total_amount']) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client</th>
+                                <th>Vendeur</th>
+                                <th>Type</th>
+                                <th>Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(empty($history)): ?>
+                                <tr><td colspan="5" class="table-empty">Aucune transaction.</td></tr>
+                            <?php else: ?>
+                                <?php foreach($history as $h): ?>
+                                <tr>
+                                    <td class="text-muted font-bold">#<?= $h['id'] ?></td>
+                                    <td class="col-name"><?= $h['client_name']?:'Passage' ?></td>
+                                    <td class="text-muted"><?= $h['seller'] ?></td>
+                                    <td><span class="badge <?= $h['payment_type']==='credit'?'badge-red':'badge-green' ?>"><?= $h['payment_type'] ?></span></td>
+                                    <td class="col-amount"><?= format_price($h['total_amount']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Top Products -->
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
-                <h3 class="font-bold text-slate-800 uppercase tracking-widest text-sm mb-8 border-b border-slate-50 pb-4">Top 5 Produits</h3>
-                <div class="space-y-6">
-                    <?php if (empty($top_products)): ?>
-                        <p class="text-center text-slate-400 py-10">Aucune donnée.</p>
+            <div class="card card-padded">
+                <h3 class="section-title">Top 5 Produits Vendus</h3>
+                <div style="display:flex;flex-direction:column;gap:1.5rem;">
+                    <?php if(empty($top_products)): ?>
+                        <div class="table-empty">Aucune donnée disponible.</div>
                     <?php else: ?>
-                        <?php foreach($top_products as $idx => $tp): ?>
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs"><?= $idx+1 ?></div>
-                            <div class="flex-1">
-                                <p class="text-sm font-bold text-slate-800 truncate"><?= $tp['name'] ?></p>
-                                <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2">
-                                    <div class="bg-blue-600 h-full rounded-full" style="width: <?= min(100, $tp['total_qty'] * 5) ?>%"></div>
+                        <?php foreach($top_products as $i => $tp): ?>
+                        <div class="top-product">
+                            <div class="top-product-rank"><?= $i+1 ?></div>
+                            <div class="top-product-info">
+                                <p class="top-product-name"><?= htmlspecialchars($tp['name']) ?></p>
+                                <div class="top-product-bar">
+                                    <div class="top-product-fill" style="width:<?= round($tp['qty']/$max_qty*100) ?>%"></div>
                                 </div>
                             </div>
-                            <span class="text-sm font-black text-slate-800"><?= $tp['total_qty'] ?></span>
+                            <span class="top-product-qty"><?= $tp['qty'] ?></span>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
+
+                <hr class="divider">
+                <div>
+                    <p class="stat-label" style="margin-bottom:8px;">Dettes clients</p>
+                    <p class="font-bold text-danger" style="font-size:1.2rem;"><?= format_price($total_debt) ?></p>
+                </div>
+                <div style="margin-top:1rem;">
+                    <p class="stat-label" style="margin-bottom:8px;">Valeur du stock</p>
+                    <p class="font-bold" style="font-size:1.2rem;color:var(--color-slate-700);"><?= format_price($total_stock_value) ?></p>
+                </div>
             </div>
         </div>
     </main>
+</div>
 </body>
 </html>

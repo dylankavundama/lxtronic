@@ -3,129 +3,120 @@ require_once 'config/db.php';
 require_once 'includes/helpers.php';
 check_auth();
 
-$message = "";
-$error = "";
+$message = ""; $error = "";
 
-// Action : Ajouter/Supprimer une dépense
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'save') {
-        $title = $_POST['title'] ?? '';
-        $amount = $_POST['amount'] ?? 0;
-        $description = $_POST['description'] ?? '';
+        $title = trim($_POST['title'] ?? '');
+        $amount = (float)($_POST['amount'] ?? 0);
+        $description = trim($_POST['description'] ?? '');
         $date = $_POST['expense_date'] ?? date('Y-m-d');
-
         if (!empty($title) && $amount > 0) {
-            $stmt = $pdo->prepare("INSERT INTO expenses (user_id, title, amount, description, expense_date) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$_SESSION['user_id'], $title, $amount, $description, $date]);
+            $pdo->prepare("INSERT INTO expenses (user_id,title,amount,description,expense_date) VALUES(?,?,?,?,?)")->execute([$_SESSION['user_id'],$title,$amount,$description,$date]);
             $message = "Dépense enregistrée.";
         }
     } elseif ($_POST['action'] === 'delete') {
-        $id = $_POST['id'];
-        $stmt = $pdo->prepare("DELETE FROM expenses WHERE id = ?");
-        $stmt->execute([$id]);
+        $pdo->prepare("DELETE FROM expenses WHERE id=?")->execute([$_POST['id']]);
         $message = "Dépense supprimée.";
     }
 }
 
-$expenses = $pdo->query("SELECT e.*, u.username FROM expenses e JOIN users u ON e.user_id = u.id ORDER BY e.expense_date DESC LIMIT 50")->fetchAll();
+$expenses = $pdo->query("SELECT e.*, u.username FROM expenses e JOIN users u ON e.user_id=u.id ORDER BY e.expense_date DESC LIMIT 50")->fetchAll();
+$total_month = $pdo->query("SELECT SUM(amount) FROM expenses WHERE MONTH(expense_date)=MONTH(CURDATE()) AND YEAR(expense_date)=YEAR(CURDATE())")->fetchColumn() ?: 0;
 ?>
 <!DOCTYPE html>
-<html lang="fr" class="bg-[#F8FAFC]">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
     <title>Dépenses - QuincaTech</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Outfit', sans-serif; }</style>
+    <?php include 'includes/head.php'; ?>
 </head>
-<body class="flex">
+<body>
+<div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
-
-    <main class="ml-64 p-8 flex-1">
-        <header class="flex justify-between items-center mb-10">
+    <main class="main-content">
+        <header class="page-header">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">Gestion des Dépenses</h1>
-                <p class="text-slate-500 mt-1">Suivi des sorties d'argent (loyer, électricité, etc.).</p>
+                <h1>Gestion des Dépenses</h1>
+                <p>Suivi des sorties d'argent — Total ce mois-ci : <strong class="text-danger"><?= format_price($total_month) ?></strong></p>
             </div>
-            <button onclick="document.getElementById('expenseModal').classList.replace('hidden', 'flex')" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-2xl shadow-lg shadow-red-200 transition-all flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2"></path></svg>
+            <button onclick="document.getElementById('expModal').classList.add('open')" class="btn btn-danger btn-lg">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Nouvelle Dépense
             </button>
         </header>
 
-        <?php if ($message): ?>
-            <div class="bg-green-50 text-green-600 p-4 rounded-2xl mb-6 border border-green-100"><?= $message ?></div>
-        <?php endif; ?>
+        <?php if ($message): ?><div class="alert alert-success animate-pulse"><?= $message ?></div><?php endif; ?>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase text-xs font-bold tracking-wider">
-                    <tr>
-                        <th class="px-6 py-4">Titre</th>
-                        <th class="px-6 py-4">Date</th>
-                        <th class="px-6 py-4">Enregistré par</th>
-                        <th class="px-6 py-4 text-right">Montant</th>
-                        <th class="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    <?php if (empty($expenses)): ?>
-                        <tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">Aucune dépense enregistrée.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($expenses as $e): ?>
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 font-semibold text-slate-700">
-                                    <?= $e['title'] ?>
-                                    <p class="text-xs text-slate-400 font-normal"><?= $e['description'] ?></p>
+        <div class="card">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Titre</th><th>Date</th><th>Enregistré par</th><th>Montant</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php if(empty($expenses)): ?>
+                            <tr><td colspan="5" class="table-empty">Aucune dépense enregistrée.</td></tr>
+                        <?php else: ?>
+                            <?php foreach($expenses as $e): ?>
+                            <tr>
+                                <td>
+                                    <p class="col-name"><?= htmlspecialchars($e['title']) ?></p>
+                                    <p class="col-sub"><?= htmlspecialchars($e['description']) ?></p>
                                 </td>
-                                <td class="px-6 py-4 text-slate-500"><?= date('d/m/Y', strtotime($e['expense_date'])) ?></td>
-                                <td class="px-6 py-4 text-slate-500"><?= $e['username'] ?></td>
-                                <td class="px-6 py-4 text-right font-black text-red-600">- <?= format_price($e['amount']) ?></td>
-                                <td class="px-6 py-4 text-right">
-                                    <form method="POST" onsubmit="return confirm('Supprimer cette dépense ?');">
+                                <td><?= date('d/m/Y',strtotime($e['expense_date'])) ?></td>
+                                <td class="text-muted"><?= htmlspecialchars($e['username']) ?></td>
+                                <td class="col-amount-danger">− <?= format_price($e['amount']) ?></td>
+                                <td>
+                                    <form method="POST" onsubmit="return confirm('Supprimer ?');" style="display:flex;justify-content:flex-end;">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $e['id'] ?>">
-                                        <button type="submit" class="p-2 text-slate-300 hover:text-red-600 transition-colors">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2"></path></svg>
+                                        <button type="submit" class="btn-icon btn-icon-danger">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
+</div>
 
-    <!-- Expense Modal -->
-    <div id="expenseModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8">
-            <h3 class="text-xl font-bold text-slate-800 mb-6">Ajouter une dépense</h3>
-            <form method="POST" class="space-y-4">
-                <input type="hidden" name="action" value="save">
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Titre / Objet</label>
-                    <input type="text" name="title" required class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-red-100">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Montant</label>
-                    <input type="number" step="0.01" name="amount" required class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-red-100 font-bold">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Date</label>
-                    <input type="date" name="expense_date" value="<?= date('Y-m-d') ?>" required class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-red-100">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Description</label>
-                    <textarea name="description" rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-red-100"></textarea>
-                </div>
-                <div class="flex gap-4 pt-4">
-                    <button type="button" onclick="document.getElementById('expenseModal').classList.replace('flex', 'hidden')" class="flex-1 px-6 py-3 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">Annuler</button>
-                    <button type="submit" class="flex-1 px-6 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 transition-all">Enregistrer</button>
-                </div>
-            </form>
-        </div>
+<!-- Expense Modal -->
+<div id="expModal" class="modal-overlay">
+    <div class="modal">
+        <h3 class="modal-title">Ajouter une dépense</h3>
+        <form method="POST" class="modal-form">
+            <input type="hidden" name="action" value="save">
+            <div class="form-group">
+                <label class="form-label">Titre / Objet</label>
+                <input type="text" name="title" required class="form-control" placeholder="Ex: Loyer du magasin">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Montant (FCFA)</label>
+                <input type="number" step="0.01" name="amount" required class="form-control form-control-lg" style="font-weight:800;color:var(--color-danger);">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" name="expense_date" value="<?= date('Y-m-d') ?>" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description (optionnel)</label>
+                <textarea name="description" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" onclick="document.getElementById('expModal').classList.remove('open')" class="btn btn-ghost btn-full">Annuler</button>
+                <button type="submit" class="btn btn-danger btn-full">Enregistrer</button>
+            </div>
+        </form>
     </div>
+</div>
+<script>
+    const em = document.getElementById('expModal');
+    em.addEventListener('click', e => { if(e.target===em) em.classList.remove('open'); });
+</script>
 </body>
 </html>
