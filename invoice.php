@@ -21,62 +21,129 @@ $items = $stmt->fetchAll();
     <title>Facture #<?= $sale_id ?> - LxTronic</title>
     <?php include 'includes/head.php'; ?>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --invoice-w: 105mm;
+            --invoice-h: 148mm;
+        }
+        
+        @media print {
+            @page { size: A6; margin: 0; }
+            body { background: white; padding: 0; margin: 0; transform: scale(1); }
+            .no-print { display: none !important; }
+            .invoice-wrapper { padding: 0; background: white; min-height: auto; }
+            .invoice-paper { 
+                width: var(--invoice-w); 
+                height: var(--invoice-h);
+                max-width: none;
+                box-shadow: none; 
+                border-radius: 0; 
+                border-top: none; 
+                padding: 10mm 8mm;
+                position: relative;
+            }
+        }
+
+        .invoice-paper {
+            width: 100%;
+            max-width: 480px; /* Preview width */
+            padding: 2rem;
+            font-size: 13px;
+        }
+
+        .invoice-header { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .invoice-brand img { height: 35px !important; }
+        .invoice-meta h2 { font-size: 1.2rem; margin: 0; }
+        .invoice-meta p { font-size: 0.8rem; margin: 0; color: #64748b; }
+
+        .invoice-parties { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 1rem; 
+            margin-bottom: 1rem; 
+            padding: 0.75rem 0; 
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        .party-label { font-size: 8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+        .party-name { font-weight: 800; font-size: 11px; }
+        .party-detail { font-size: 10px; color: #64748b; line-height: 1.2; }
+
+        .invoice-table { margin-bottom: 1rem; }
+        .invoice-table th { font-size: 9px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+        .invoice-table td { padding: 8px 0; font-size: 10px; border-bottom: 1px solid #f8fafc; }
+        
+        .invoice-totals { border-top: 1px solid #e2e8f0; padding-top: 0.75rem; }
+        .invoice-totals-table { width: 100%; }
+        .invoice-totals-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 10px; }
+        .invoice-totals-final { 
+            display: flex; justify-content: space-between; padding-top: 8px; margin-top: 4px; 
+            border-top: 2px solid #0f172a; font-size: 14px; font-weight: 900; color: #0f172a; 
+        }
+
+        .invoice-footer { margin-top: 1rem; font-size: 8px; text-align: center; color: #94a3b8; border-top: none; padding-top: 0; }
+    </style>
 </head>
 <body>
 <div class="invoice-wrapper">
     <div class="invoice-actions no-print">
-        <a href="sales_history.php" class="btn btn-ghost">
+        <a href="sales.php" class="btn btn-ghost">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Retour
         </a>
         <button onclick="window.print()" class="btn btn-primary btn-lg" style="flex:1;">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-            Imprimer la Facture
+            Imprimer (A6)
         </button>
     </div>
 
     <div class="invoice-paper">
         <div class="invoice-header">
             <div class="invoice-brand">
-                <img src="logo.jpg" alt="Logo" style="height:60px;object-fit:contain;margin-bottom:8px;display:block;">
-                <p style="font-family:var(--font-main);color:var(--color-slate-400);font-size:0.8rem;">Vente de matériel de quincaillerie de haute qualité.</p>
+                <img src="logo.jpg" alt="Logo">
             </div>
             <div class="invoice-meta">
                 <h2>FACTURE</h2>
-                <p>#VQ-<?= str_pad($sale_id, 5, '0', STR_PAD_LEFT) ?></p>
+                <p>#VQ-<?= str_pad($sale_id, 4, '0', STR_PAD_LEFT) ?></p>
             </div>
         </div>
 
         <div class="invoice-parties">
             <div>
-                <p class="party-label">Émis par</p>
+                <p class="party-label">Vendeur</p>
                 <p class="party-name"><?= htmlspecialchars($sale['seller_name']) ?></p>
-                <p class="party-detail"><?= date('d F Y \à H:i', strtotime($sale['created_at'])) ?></p>
+                <p class="party-detail"><?= date('d/m/y H:i', strtotime($sale['created_at'])) ?></p>
             </div>
             <div style="text-align:right;">
-                <p class="party-label">Facturé à</p>
+                <p class="party-label">Client</p>
                 <p class="party-name"><?= $sale['client_name'] ? htmlspecialchars($sale['client_name']) : 'Client de passage' ?></p>
-                <p class="party-detail"><?= htmlspecialchars($sale['client_phone'] ?? '') ?></p>
-                <p class="party-detail"><?= htmlspecialchars($sale['client_address'] ?? '') ?></p>
+                <?php if($sale['client_phone']): ?><p class="party-detail"><?= htmlspecialchars($sale['client_phone']) ?></p><?php endif; ?>
             </div>
         </div>
 
         <table class="invoice-table">
             <thead>
                 <tr>
-                    <th>Désignation</th>
+                    <th style="text-align:left;">Désignation</th>
                     <th style="text-align:center;">Qté</th>
-                    <th style="text-align:right;">Prix Unit.</th>
-                    <th>Total</th>
+                    <th style="text-align:right;">Total</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($items as $it): ?>
+                <?php 
+                $total_discount = 0;
+                foreach($items as $it): 
+                    $total_discount += $it['discount_amount'] * $it['quantity'];
+                ?>
                 <tr>
-                    <td><?= htmlspecialchars($it['product_name']) ?></td>
+                    <td>
+                        <div style="font-weight:700;"><?= htmlspecialchars($it['product_name']) ?></div>
+                        <?php if ($it['discount_amount'] > 0): ?>
+                            <div style="font-size: 8px; color: var(--color-primary); font-style: italic;">
+                                Remise: -<?= format_price($it['discount_amount'], $sale['currency']) ?>
+                            </div>
+                        <?php endif; ?>
+                    </td>
                     <td style="text-align:center;"><?= $it['quantity'] ?></td>
-                    <td style="text-align:right;"><?= format_price($it['unit_price'], $sale['currency']) ?></td>
-                    <td style="font-weight:700;"><?= format_price($it['subtotal'], $sale['currency']) ?></td>
+                    <td style="text-align:right; font-weight:700;"><?= format_price($it['subtotal'], $sale['currency']) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -88,24 +155,30 @@ $items = $stmt->fetchAll();
                     <span>Sous-total HT</span>
                     <span><?= format_price($sale['total_amount'] * 0.82, $sale['currency']) ?></span>
                 </div>
+                <?php if ($total_discount > 0): ?>
+                <div class="invoice-totals-row" style="color: var(--color-primary); font-weight: 700;">
+                    <span>Réductions</span>
+                    <span>-<?= format_price($total_discount, $sale['currency']) ?></span>
+                </div>
+                <?php endif; ?>
                 <div class="invoice-totals-row">
                     <span>TVA (18%)</span>
                     <span><?= format_price($sale['total_amount'] * 0.18, $sale['currency']) ?></span>
                 </div>
                 <div class="invoice-totals-final">
-                    <span>NET À PAYER</span>
+                    <span>TOTAL</span>
                     <span><?= format_price($sale['total_amount'], $sale['currency']) ?></span>
                 </div>
-                <div style="margin-top:1rem; text-align:right;">
-                    <span class="badge badge-slate" style="font-size:11px;letter-spacing:0.08em;">
-                        Payé par : <?= strtoupper($sale['payment_type']) ?>
+                <div style="margin-top:0.5rem; text-align:center;">
+                    <span class="badge badge-slate" style="font-size:9px; background: #f1f5f9;">
+                         PAYÉ PAR : <?= strtoupper($sale['payment_type']) ?>
                     </span>
                 </div>
             </div>
         </div>
 
         <div class="invoice-footer">
-            Merci de votre confiance. — LxTronic
+            Merci de votre confiance. LxTronic
         </div>
     </div>
 </div>

@@ -38,6 +38,8 @@ $total_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF' 
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
+
     <main class="main-content">
         <header class="page-header">
             <div>
@@ -57,7 +59,7 @@ $total_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF' 
         <?php if ($message): ?><div class="alert alert-success animate-pulse"><?= $message ?></div><?php endif; ?>
 
         <div class="card">
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr><th>Titre</th><th>Date</th><th>Enregistré par</th><th>Montant</th><th>Actions</th></tr>

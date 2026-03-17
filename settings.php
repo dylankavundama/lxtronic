@@ -32,6 +32,8 @@ $app_slogan = get_setting('app_slogan', 'Innovation At Your Service');
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
+
     <main class="main-content">
         <header class="page-header">
             <div>

@@ -61,6 +61,7 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
     <main class="main-content">
         <header class="page-header">
             <div>
@@ -77,7 +78,7 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
         <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
 
         <div class="card">
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>

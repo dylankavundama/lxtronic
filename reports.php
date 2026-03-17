@@ -74,6 +74,8 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
+
     <main class="main-content">
         <header class="page-header">
             <div>
@@ -155,7 +157,8 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
                 </div>
             </div>
 
-            <div class="card card-padded">
+            <div class="card card-padded table-responsive">
+                <h3 class="section-title">Produits les plus vendus</h3>
                 <h3 class="section-title">Performance Globale</h3>
                 <div>
                     <p class="stat-label" style="margin-bottom:8px;">Dettes clients (Total Éq. USD)</p>

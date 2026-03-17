@@ -951,6 +951,18 @@ textarea.form-control {
 .login-box {
     width: 100%;
     max-width: 430px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 1.5rem;
+    }
+
+    .login-logo-wrap img {
+        width: 70px !important;
+        height: 70px !important;
+    }
 }
 
 .login-logo-wrap {
@@ -1779,4 +1791,138 @@ textarea.form-control {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-slate-300);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Mobile Header / Burger Toggle */
+.mobile-top-bar {
+    display: none;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-slate-100);
+    z-index: 40;
+    padding: 0 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+}
+
+.burger-btn {
+    background: none;
+    border: none;
+    color: var(--color-slate-600);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+}
+
+.burger-btn:active {
+    background: var(--color-slate-100);
+}
+
+.burger-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Table Responsiveness */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Base Responsive Rules */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 0px;
+    }
+
+    .sidebar {
+        left: -280px;
+        width: 280px;
+        transition: left 0.3s ease;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 1.5rem;
+    }
+
+    .mobile-top-bar {
+        display: flex;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 45;
+        display: none;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        flex: 1;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal {
+        padding: 1.5rem;
+        border-radius: var(--radius-2xl);
+    }
+}
+
+@media (max-width: 580px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 1.25rem;
+    }
 }

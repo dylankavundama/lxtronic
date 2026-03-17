@@ -49,6 +49,7 @@ $users = $pdo->query("SELECT id,username,role,created_at FROM users ORDER BY use
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
     <main class="main-content">
         <header class="page-header">
             <div>
@@ -65,7 +66,7 @@ $users = $pdo->query("SELECT id,username,role,created_at FROM users ORDER BY use
         <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
 
         <div class="card">
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr><th>Utilisateur</th><th>Rôle</th><th>Créé le</th><th>Actions</th></tr>

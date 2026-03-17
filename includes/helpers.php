@@ -1,4 +1,13 @@
 <?php
+// Correction pour les environnements d'hébergement avec des chemins de session mal configurés
+$session_path = dirname(__DIR__) . '/sessions';
+if (!is_dir($session_path)) {
+    @mkdir($session_path, 0777, true);
+}
+if (is_writable($session_path)) {
+    session_save_path($session_path);
+}
+
 session_start();
 
 /**

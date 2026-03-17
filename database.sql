@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS sale_items (
     product_id INT,
     quantity INT NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
+    discount_amount DECIMAL(10, 2) DEFAULT 0.00,
     subtotal DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id)

@@ -35,6 +35,7 @@ $recent_sales = $pdo->query("SELECT s.*, c.name as client_name FROM sales s LEFT
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
 
     <main class="main-content">
         <header class="page-header">

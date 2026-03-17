@@ -74,6 +74,8 @@ $logs = $transactions->fetchAll();
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
+
     <main class="main-content">
         <header class="page-header">
             <div>
@@ -132,7 +134,7 @@ $logs = $transactions->fetchAll();
             <div style="padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--color-slate-100);">
                 <h3 class="section-title">Journal des transactions (Toutes devises)</h3>
             </div>
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>

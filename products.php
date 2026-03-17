@@ -46,6 +46,8 @@ $low_stock = array_filter($products, fn($p) => $p['stock_quantity'] <= $p['min_s
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
+
     <main class="main-content">
         <header class="page-header">
             <div>
@@ -74,7 +76,7 @@ $low_stock = array_filter($products, fn($p) => $p['stock_quantity'] <= $p['min_s
         <?php endif; ?>
 
         <div class="card">
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>

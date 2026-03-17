@@ -17,7 +17,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart_data'])) {
         $pdo->beginTransaction();
         try {
             $status = ($payment_type === 'credit') ? 'dette' : 'paye';
-            foreach ($cart as $item) { $total_amount_usd += $item['price'] * $item['quantity']; }
+            
+            // Re-calculate total with discount validation (max 10%)
+            $total_amount_usd = 0;
+            foreach ($cart as $item) {
+                $unit_price = floatval($item['price']);
+                $discount = isset($item['discount']) ? floatval($item['discount']) : 0;
+                
+                // Server-side validation: max 10%
+                if ($discount > ($unit_price * 0.10)) {
+                    $discount = $unit_price * 0.10;
+                }
+                
+                $total_amount_usd += ($unit_price - $discount) * $item['quantity'];
+            }
+            
             $final_amount = ($currency === 'CDF') ? ($total_amount_usd * $usd_to_cdf) : $total_amount_usd;
 
             $stmt = $pdo->prepare("INSERT INTO sales (user_id, client_id, total_amount, payment_type, status, currency, exchange_rate) VALUES(?,?,?,?,?,?,?)");
@@ -25,12 +39,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart_data'])) {
             $sale_id = $pdo->lastInsertId();
 
             foreach ($cart as $item) {
-                $subtotal_usd = $item['price'] * $item['quantity'];
-                $item_price = ($currency === 'CDF') ? ($item['price'] * $usd_to_cdf) : $item['price'];
+                $unit_price = floatval($item['price']);
+                $discount = isset($item['discount']) ? floatval($item['discount']) : 0;
+                if ($discount > ($unit_price * 0.10)) $discount = $unit_price * 0.10;
+
+                $net_unit_price_usd = $unit_price - $discount;
+                $subtotal_usd = $net_unit_price_usd * $item['quantity'];
+                
+                $item_price = ($currency === 'CDF') ? ($net_unit_price_usd * $usd_to_cdf) : $net_unit_price_usd;
+                $item_discount = ($currency === 'CDF') ? ($discount * $usd_to_cdf) : $discount;
                 $item_subtotal = ($currency === 'CDF') ? ($subtotal_usd * $usd_to_cdf) : $subtotal_usd;
 
-                $pdo->prepare("INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, subtotal) VALUES(?,?,?,?,?)")
-                    ->execute([$sale_id, $item['id'], $item['quantity'], $item_price, $item_subtotal]);
+                $pdo->prepare("INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, discount_amount, subtotal) VALUES(?,?,?,?,?,?)")
+                    ->execute([$sale_id, $item['id'], $item['quantity'], $item_price, $item_discount, $item_subtotal]);
                 $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id=?")->execute([$item['quantity'], $item['id']]);
             }
 
@@ -75,6 +96,11 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
             animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
+        @media (max-width: 768px) {
+            #pos-dialog { max-height: 100vh; border-radius: 0; }
+            .summary-grid { grid-template-columns: 1fr; }
+        }
+
         @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
         .dialog-header { padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; }
@@ -110,11 +136,16 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
         .currency-btn-mini { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid #e2e8f0; background: white; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .currency-btn-mini.active { border-color: var(--color-primary); color: var(--color-primary); background: rgba(37, 99, 235, 0.05); }
 
+        .discount-input { width: 70px; padding: 4px 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.8rem; font-weight: 700; text-align: right; }
+        .discount-input:focus { border-color: var(--color-primary); outline: none; }
+        .discount-label { font-size: 0.7rem; color: #94a3b8; font-weight: 700; margin-bottom: 2px; display: block; }
+
     </style>
 </head>
 <body>
 <div class="app-layout">
     <?php include 'includes/sidebar.php'; ?>
+    <?php include 'includes/responsive_header.php'; ?>
 
     <main class="main-content">
         <header class="page-header">
@@ -125,7 +156,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
         </header>
 
         <div class="card">
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr><th>ID</th><th>Client</th><th>Paiement</th><th>Total</th><th>Date</th><th>Facture</th></tr>
@@ -161,11 +192,23 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
         </div>
 
         <div class="dialog-body">
-            <!-- Search -->
-            <div class="search-container">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" id="pSearch" oninput="searchProd()" placeholder="Quel produit cherchez-vous ?" autocomplete="off">
-                <div id="resBox" class="search-results"></div>
+            <!-- Search & Selection -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div class="search-container">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="pSearch" oninput="searchProd()" placeholder="Rechercher un produit..." autocomplete="off">
+                    <div id="resBox" class="search-results"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ou sélectionner dans la liste</label>
+                    <select id="pSelect" class="form-control" onchange="addFromSelect(this.value)">
+                        <option value="">-- Choisir un produit --</option>
+                        <?php foreach($products as $p): ?>
+                            <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?> (<?= format_price($p['sell_price'], 'USD') ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
 
             <!-- Cart -->
@@ -254,8 +297,26 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
 
     function addToCart(p) {
         let it = cart.find(x => x.id == p.id);
-        if (it) { it.quantity++; } else { cart.push({...p, quantity:1, price:parseFloat(p.sell_price)}); }
-        pSearch.value=''; resBox.classList.remove('open'); render();
+        if (it) { it.quantity++; } else { cart.push({...p, quantity:1, price:parseFloat(p.sell_price), discount:0}); }
+        pSearch.value=''; resBox.classList.remove('open'); 
+        document.getElementById('pSelect').value = ''; // Reset select
+        render();
+    }
+
+    function addFromSelect(id) {
+        if (!id) return;
+        const p = prods.find(x => x.id == id);
+        if (p) addToCart(p);
+    }
+
+    function updDisc(id, val) {
+        let it = cart.find(x => x.id == id);
+        if (!it) return;
+        let d = parseFloat(val) || 0;
+        const maxD = it.price * 0.10;
+        if (d > maxD) d = maxD;
+        it.discount = d;
+        render();
     }
 
     function updQty(id, d) {
@@ -285,11 +346,20 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
 
         let totalUSD = 0;
         list.innerHTML = cart.map(it => {
-            const sub = it.price * it.quantity; totalUSD += sub;
-            return `<div class="cart-item-mini">
-                <span style="font-weight:700; font-size:0.85rem;">${it.name}</span>
+            const sub = (it.price - it.discount) * it.quantity; totalUSD += sub;
+            return `<div class="cart-item-mini" style="grid-template-columns: 1fr auto auto auto;">
+                <div>
+                    <span style="font-weight:700; font-size:0.85rem;">${it.name}</span>
+                    <div style="margin-top:4px;">
+                        <span class="discount-label">Réduction ($)</span>
+                        <input type="number" class="discount-input" value="${it.discount}" step="0.01" min="0" max="${(it.price * 0.1).toFixed(2)}" onchange="updDisc(${it.id}, this.value)">
+                    </div>
+                </div>
                 <div class="qty-ctrl"><button onclick="updQty(${it.id},-1)">−</button><span>${it.quantity}</span><button onclick="updQty(${it.id},1)">+</button></div>
-                <span style="font-weight:800; color:var(--color-slate-700);">${fmt(cur==='CDF'?sub*rate:sub, cur)}</span>
+                <div style="text-align:right;">
+                    <div style="font-weight:800; color:var(--color-slate-700);">${fmt(cur==='CDF'?sub*rate:sub, cur)}</div>
+                    ${it.discount > 0 ? `<div style="font-size:0.7rem; color:var(--color-primary); font-weight:700;">-${fmt(cur==='CDF'?it.discount*rate*it.quantity:it.discount*it.quantity, cur)}</div>` : ''}
+                </div>
             </div>`;
         }).join('');
 
