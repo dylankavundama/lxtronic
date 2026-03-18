@@ -24,7 +24,7 @@ $recent_sales = $pdo->query("SELECT s.*, c.name as client_name FROM sales s LEFT
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Tableau de bord - LxTronic</title>
+    <title>Tableau de bord - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>

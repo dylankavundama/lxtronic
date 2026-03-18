@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Connexion - LxTronic</title>
+    <title>Connexion - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
     <style>
         .password-toggle-wrapper {
@@ -81,12 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+<!-- Splash Screen Loader -->
+<div id="page-loader">
+    <div class="loader-content">
+        <img src="logo.jpg" alt="LXTRONIC" class="loader-logo">
+        <h1 class="loader-title">LXTRONIC</h1>
+        <p class="loader-slogan">Innovation At Your Service</p>
+        <div class="loader-spinner"></div>
+    </div>
+</div>
+
 <div class="login-page">
     <div class="login-box">
         <!-- Logo -->
         <div class="login-logo-wrap">
-            <img src="logo.jpg" alt="LxTronic" class="animate-bounce" style="width:90px;height:90px;object-fit:contain;border-radius:20px;margin-bottom:1rem;box-shadow:0 8px 32px rgba(37,99,235,0.2);">
-            <!-- <h1 class="login-logo-title">LxTronic</h1> -->
+            <img src="logo.jpg" alt="LXTRONIC" class="animate-bounce" style="width:90px;height:90px;object-fit:contain;border-radius:20px;margin: 0 auto 1.5rem; display: block; box-shadow:0 8px 32px rgba(37,99,235,0.2);">
+            <!-- <h1 class="login-logo-title">LXTRONIC</h1> -->
             <p class="login-logo-sub">Innovation At Your Service</p>
         </div>
 
@@ -138,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </div>
 
-        <p class="login-footer">&copy; <?= date('Y') ?> LxTronic — Tous droits réservés.</p>
+        <p class="login-footer">&copy; <?= date('Y') ?> LXTRONIC — Tous droits réservés.</p>
         <br>
         <p class="login-footer">Développé par <a href="https://nextbytechno.com">Next Byte Technology</a></p>
     </div>
@@ -167,6 +177,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `;
             this.setAttribute('aria-label', 'Masquer le mot de passe');
         }
+    });
+</script>
+
+<script>
+    // Affichage de la page de chargement pendant 2 secondes lors du lancement
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('page-loader');
+        setTimeout(() => {
+            if(loader) loader.classList.add('hidden');
+        }, 2000); // 2000ms = 2 secondes
     });
 </script>
 </body>

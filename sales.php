@@ -75,7 +75,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Ventes - LxTronic</title>
+    <title>Ventes - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
     <style>
         .fab { position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; border: none; }

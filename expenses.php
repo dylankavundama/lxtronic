@@ -32,7 +32,7 @@ $total_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF' 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Dépenses - LxTronic</title>
+    <title>Dépenses - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>

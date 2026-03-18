@@ -7,7 +7,7 @@ $message = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usd_to_cdf = $_POST['usd_to_cdf'] ?? '2800';
-    $app_name = $_POST['app_name'] ?? 'LxTronic';
+    $app_name = $_POST['app_name'] ?? 'LXTRONIC';
     $app_slogan = $_POST['app_slogan'] ?? 'Innovation At Your Service';
 
     $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $usd_to_cdf = get_setting('usd_to_cdf', '2800');
-$app_name = get_setting('app_name', 'LxTronic');
+$app_name = get_setting('app_name', 'LXTRONIC');
 $app_slogan = get_setting('app_slogan', 'Innovation At Your Service');
 
 ?>

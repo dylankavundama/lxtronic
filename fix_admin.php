@@ -2,7 +2,7 @@
 require_once 'config/db.php';
 require_once 'includes/helpers.php';
 
-echo "<h2>LxTronic - Réinitialisation Admin</h2>";
+echo "<h2>LXTRONIC - Réinitialisation Admin</h2>";
 
 try {
     // Créer la table users si elle n'existe pas

@@ -61,15 +61,8 @@ $logs = $transactions->fetchAll();
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Caisse Multi-Devise - LxTronic</title>
+    <title>Caisse Multi-Devise - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
-    <style>
-        .caisse-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .caisse-box { padding: 1.5rem; border-radius: var(--radius-2xl); border: 1px solid var(--color-slate-100); background: white; }
-        .caisse-box h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-slate-500); margin-bottom: 1rem; border-bottom: 1px solid var(--color-slate-50); padding-bottom: 0.5rem; }
-        .caisse-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem; }
-        .caisse-total { font-size: 1.5rem; font-weight: 800; margin-top: 1rem; padding-top: 1rem; border-top: 2px dashed var(--color-slate-100); }
-    </style>
 </head>
 <body>
 <div class="app-layout">

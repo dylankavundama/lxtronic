@@ -18,7 +18,7 @@ $items = $stmt->fetchAll();
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Facture #<?= $sale_id ?> - LxTronic</title>
+    <title>Facture #<?= $sale_id ?> - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet">
     <style>
@@ -52,7 +52,7 @@ $items = $stmt->fetchAll();
         }
 
         .invoice-header { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
-        .invoice-brand img { height: 35px !important; }
+        .invoice-brand img { height: 75px !important; max-width: 180px; object-fit: contain; }
         .invoice-meta h2 { font-size: 1.2rem; margin: 0; }
         .invoice-meta p { font-size: 0.8rem; margin: 0; color: #64748b; }
 
@@ -151,20 +151,16 @@ $items = $stmt->fetchAll();
 
         <div class="invoice-totals">
             <div class="invoice-totals-table">
-                <div class="invoice-totals-row">
-                    <span>Sous-total HT</span>
-                    <span><?= format_price($sale['total_amount'] * 0.82, $sale['currency']) ?></span>
-                </div>
                 <?php if ($total_discount > 0): ?>
+                <div class="invoice-totals-row">
+                    <span>Sous-total brut</span>
+                    <span><?= format_price($sale['total_amount'] + $total_discount, $sale['currency']) ?></span>
+                </div>
                 <div class="invoice-totals-row" style="color: var(--color-primary); font-weight: 700;">
-                    <span>Réductions</span>
+                    <span>Remises / Réductions</span>
                     <span>-<?= format_price($total_discount, $sale['currency']) ?></span>
                 </div>
                 <?php endif; ?>
-                <div class="invoice-totals-row">
-                    <span>TVA (18%)</span>
-                    <span><?= format_price($sale['total_amount'] * 0.18, $sale['currency']) ?></span>
-                </div>
                 <div class="invoice-totals-final">
                     <span>TOTAL</span>
                     <span><?= format_price($sale['total_amount'], $sale['currency']) ?></span>
@@ -178,7 +174,7 @@ $items = $stmt->fetchAll();
         </div>
 
         <div class="invoice-footer">
-            Merci de votre confiance. LxTronic
+            Merci de votre confiance. LXTRONIC
         </div>
     </div>
 </div>

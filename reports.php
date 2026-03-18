@@ -68,7 +68,7 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Rapports - LxTronic</title>
+    <title>Rapports - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>
@@ -89,7 +89,7 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
             </div>
         </header>
 
-        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="stats-grid reports-stats">
             <div class="stat-card">
                 <div class="stat-icon stat-icon-green">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -133,7 +133,7 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
                 <div style="padding:1.5rem 1.5rem 0; margin-bottom:0;">
                     <h3 class="section-title">Détail des transactions</h3>
                 </div>
-                <div class="data-table-wrapper">
+                <div class="data-table-wrapper table-responsive">
                     <table class="data-table">
                         <thead>
                             <tr><th>ID</th><th>Client</th><th>Vendeur</th><th>Paiement</th><th>Montant</th></tr>

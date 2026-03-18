@@ -55,7 +55,7 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Clients & Dettes - LxTronic</title>
+    <title>Clients & Dettes - LXTRONIC</title>
     <?php include 'includes/head.php'; ?>
 </head>
 <body>

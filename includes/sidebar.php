@@ -10,7 +10,7 @@ $current = basename($_SERVER['PHP_SELF']);
     <div class="sidebar-logo">
         <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
             <img src="logo.jpg" alt="Logo" style="width:44px;height:44px;object-fit:contain;border-radius:10px;">
-            <span>LxTronic</span>
+            <span>LXTRONIC</span>
         </div>
         <button class="burger-btn no-print" onclick="toggleSidebar()" style="display: none; color: white;" id="closeSidebar">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
