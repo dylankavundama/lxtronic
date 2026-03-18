@@ -1,9 +1,15 @@
 <?php
 // Configuration de la base de données
+// $host = 'localhost';
+// $db   = 'quincatech';
+// $user = 'root'; // Par défaut sous XAMPP
+// $pass = '';     // Par défaut sous XAMPP
+// $charset = 'utf8mb4';
+
 $host = 'localhost';
-$db   = 'quincatech';
-$user = 'root'; // Par défaut sous XAMPP
-$pass = '';     // Par défaut sous XAMPP
+$db   = 'easykiv1_lx';
+$user = 'easykiv1_lx'; // Par défaut sous XAMPP
+$pass = 'A+?,fZn-fb0;3Y46';     // Par défaut sous XAMPP
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
