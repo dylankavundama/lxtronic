@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LXTRONIC - Solution de Gestion Intelligente</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #2563eb;
+            --color-primary-dark: #1d4ed8;
+            --color-bg: #F8FAFC;
+            --color-white: #ffffff;
+            --color-slate-50: #f8fafc;
+            --color-slate-100: #f1f5f9;
+            --color-slate-400: #94a3b8;
+            --color-slate-500: #64748b;
+            --color-slate-600: #475569;
+            --color-slate-800: #1e293b;
+            --color-slate-900: #0f172a;
+            --font-main: 'Outfit', sans-serif;
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--color-bg);
+            color: var(--color-slate-800);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--color-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--color-slate-600);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--color-primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .hero {
+            padding: 10rem 5% 5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: var(--color-slate-900);
+            letter-spacing: -0.03em;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--color-slate-500);
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .hero-assets {
+            margin-top: 4rem;
+            position: relative;
+        }
+
+        .main-screenshot-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            border-radius: 24px;
+            border: 8px solid white;
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-slate-400);
+            font-weight: 600;
+            font-size: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .main-screenshot-placeholder::after {
+            content: "Capture d'écran du Tableau de Bord";
+        }
+
+        .features {
+            padding: 8rem 5%;
+            background-color: white;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--color-slate-900);
+            margin-bottom: 1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            border-radius: 20px;
+            background: var(--color-bg);
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: white;
+            border-color: var(--color-slate-100);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .icon-box {
+            width: 56px;
+            height: 56px;
+            background: var(--color-primary-light);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            color: var(--color-slate-500);
+        }
+
+        .offline-section {
+            padding: 8rem 5%;
+            background: linear-gradient(135deg, var(--color-slate-900), #1e293b);
+            color: white;
+            overflow: hidden;
+        }
+
+        .offline-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 4rem;
+        }
+
+        .offline-content h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+
+        .offline-content p {
+            color: var(--color-slate-400);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .offline-visual-placeholder {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .offline-visual-placeholder::after {
+            content: "Illustration Mode Hors-Ligne (PWA)";
+        }
+
+        .screenshots {
+            padding: 8rem 5%;
+            background-color: var(--color-slate-50);
+        }
+
+        .screenshots-scroll {
+            display: flex;
+            gap: 2rem;
+            overflow-x: auto;
+            padding: 2rem 0;
+            scrollbar-width: none;
+        }
+
+        .screenshot-item {
+            min-width: 300px;
+            aspect-ratio: 9/16;
+            background: #cbd5e1;
+            border-radius: 20px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            border: 4px solid white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        footer {
+            padding: 4rem 5%;
+            background-color: white;
+            border-top: 1px solid var(--color-slate-100);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-weight: 800;
+            font-size: 2rem;
+            color: var(--color-primary);
+            margin-bottom: 2rem;
+        }
+
+        .copyright {
+            color: var(--color-slate-400);
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .offline-container { grid-template-columns: 1fr; text-align: center; }
+            .nav-links { display: none; }
+            .hero { padding-top: 7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">LXTRONIC</div>
+        <nav class="nav-links">
+            <a href="#features">Fonctionnalités</a>
+            <a href="#pwa">Hors-Ligne</a>
+            <a href="#screenshots">Aperçu</a>
+        </nav>
+        <a href="login.php" class="btn btn-primary">Se Connecter</a>
+    </header>
+
+    <section class="hero">
+        <h1>Gérez votre commerce avec <span>intelligence</span> et simplicité.</h1>
+        <p>LXTRONIC est la solution complète pour la gestion de vos ventes, stocks et finances. Conçue pour la rapidité et l'efficacité.</p>
+        <div class="hero-btns">
+            <a href="login.php" class="btn btn-primary">Commencer maintenant</a>
+        </div>
+
+        <div class="hero-assets">
+            <div class="main-screenshot-placeholder"></div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>Pourquoi choisir LXTRONIC ?</h2>
+            <p>Tout ce dont vous avez besoin pour propulser votre business.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+                <h3>Gestion de Stock</h3>
+                <p>Suivi précis des quantités, alertes de seuil critique et historique des entrées/sorties en temps réel.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <h3>Multi-Devises</h3>
+                <p>Vendez en USD ou CDF avec une conversion automatique basée sur votre taux de change configuré.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg>
+                </div>
+                <h3>Tableau de Bord</h3>
+                <p>Visualisez vos performances quotidiennes, vos statistiques de ventes et votre santé financière d'un coup d'œil.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <h3>Client & Dettes</h3>
+                <p>Gérez votre base de clients et gardez un œil strict sur les crédits et paiements par tranches.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="offline-section" id="pwa">
+        <div class="offline-container">
+            <div class="offline-content">
+                <h2>Ne soyez jamais arrêté par Internet.</h2>
+                <p>Grâce à notre technologie PWA (Progressive Web App), LXTRONIC fonctionne parfaitement même sans connexion internet. Continuez à enregistrer vos ventes, elles seront synchronisées automatiquement dès que vous serez en ligne.</p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">
+                        <strong>Mode Hors-Ligne</strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">
+                        <strong>Synchro Auto</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="offline-visual-placeholder"></div>
+        </div>
+    </section>
+
+    <section class="screenshots" id="screenshots">
+        <div class="section-header">
+            <h2>Aperçu de l'Interface</h2>
+            <p>Une interface fluide, intuitive et optimisée pour tous les appareils.</p>
+        </div>
+
+        <div class="screenshots-scroll">
+            <div class="screenshot-item">Vue Mobile - POS</div>
+            <div class="screenshot-item">Vue Mobile - Stock</div>
+            <div class="screenshot-item">Vue Mobile - Rapports</div>
+            <div class="screenshot-item">Vue Mobile - Clients</div>
+            <div class="screenshot-item">Vue Mobile - Caisse</div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-logo">LXTRONIC</div>
+        <p class="copyright">&copy; 2024 LXTRONIC. Tous droits réservés.</p>
+        <div style="margin-top: 1.5rem;">
+            <a href="login.php" class="btn btn-primary">Se Connecter à l'Espace Admin</a>
+        </div>
+    </footer>
+
+</body>
+</html>

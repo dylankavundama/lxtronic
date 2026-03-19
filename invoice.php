@@ -39,48 +39,52 @@ $items = $stmt->fetchAll();
                 box-shadow: none; 
                 border-radius: 0; 
                 border-top: none; 
-                padding: 10mm 8mm;
+                padding: 5mm 5mm;
                 position: relative;
             }
         }
 
         .invoice-paper {
             width: 100%;
-            max-width: 480px; /* Preview width */
-            padding: 2rem;
-            font-size: 13px;
+            max-width: 420px; /* Tighter Preview */
+            padding: 1rem;
+            font-size: 11px; /* Slightly smaller base font */
+            line-height: 1.2;
         }
 
-        .invoice-header { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
-        .invoice-brand img { height: 75px !important; max-width: 180px; object-fit: contain; }
-        .invoice-meta h2 { font-size: 1.2rem; margin: 0; }
-        .invoice-meta p { font-size: 0.8rem; margin: 0; color: #64748b; }
+        .invoice-header { margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; text-align: center; }
+        .invoice-brand img { height: 50px !important; max-width: 150px; object-fit: contain; margin-bottom: 4px; }
+        .brand-details { font-size: 8px; color: #475569; line-height: 1.1; }
+        .invoice-meta { margin-top: 4px; }
+        .invoice-meta h2 { font-size: 1rem; margin: 0; font-weight: 900; letter-spacing: 1px; }
+        .invoice-meta p { font-size: 0.75rem; margin: 0; color: #0f172a; font-weight: 700; }
 
         .invoice-parties { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            gap: 1rem; 
-            margin-bottom: 1rem; 
-            padding: 0.75rem 0; 
+            gap: 0.5rem; 
+            margin-bottom: 0.5rem; 
+            padding: 0.5rem 0; 
             border-bottom: 1px dashed #e2e8f0;
         }
-        .party-label { font-size: 8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
-        .party-name { font-weight: 800; font-size: 11px; }
-        .party-detail { font-size: 10px; color: #64748b; line-height: 1.2; }
+        .party-label { font-size: 7px; text-transform: uppercase; color: #94a3b8; margin-bottom: 1px; }
+        .party-name { font-weight: 800; font-size: 10px; }
+        .party-detail { font-size: 9px; color: #64748b; line-height: 1.1; }
 
-        .invoice-table { margin-bottom: 1rem; }
-        .invoice-table th { font-size: 9px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .invoice-table td { padding: 8px 0; font-size: 10px; border-bottom: 1px solid #f8fafc; }
+        .invoice-table { margin-bottom: 0.5rem; width: 100%; border-collapse: collapse; }
+        .invoice-table th { font-size: 8px; padding: 4px 2px; border-bottom: 1px solid #0f172a; text-transform: uppercase; }
+        .invoice-table td { padding: 4px 2px; font-size: 9px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
         
-        .invoice-totals { border-top: 1px solid #e2e8f0; padding-top: 0.75rem; }
+        .invoice-totals { border-top: 1px solid #0f172a; padding-top: 0.5rem; }
         .invoice-totals-table { width: 100%; }
-        .invoice-totals-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 10px; }
+        .invoice-totals-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 9px; }
         .invoice-totals-final { 
-            display: flex; justify-content: space-between; padding-top: 8px; margin-top: 4px; 
-            border-top: 2px solid #0f172a; font-size: 14px; font-weight: 900; color: #0f172a; 
+            display: flex; justify-content: space-between; padding-top: 4px; margin-top: 2px; 
+            border-top: 1.5px solid #0f172a; font-size: 12px; font-weight: 900; color: #0f172a; 
         }
 
-        .invoice-footer { margin-top: 1rem; font-size: 8px; text-align: center; color: #94a3b8; border-top: none; padding-top: 0; }
+        .invoice-footer { margin-top: 0.5rem; font-size: 8px; text-align: center; color: #475569; font-weight: 600; }
+        .footer-tagline { font-size: 7px; font-style: italic; color: #94a3b8; margin-top: 2px; text-align: center; }
     </style>
 </head>
 <body>
@@ -99,6 +103,11 @@ $items = $stmt->fetchAll();
         <div class="invoice-header">
             <div class="invoice-brand">
                 <img src="logo.jpg" alt="Logo">
+                <div class="brand-details">
+                    <p>Galerie MTB Numero 10, Rue Kinshasa, Butembo/NK</p>
+                    <p>Tél : +243 897 205 777 | +243 992 003 159</p>
+                    <p>RCCM : 0000000000 | ID NAT : 567890000</p>
+                </div>
             </div>
             <div class="invoice-meta">
                 <h2>FACTURE</h2>
@@ -137,7 +146,7 @@ $items = $stmt->fetchAll();
                     <td>
                         <div style="font-weight:700;"><?= htmlspecialchars($it['product_name']) ?></div>
                         <?php if ($it['discount_amount'] > 0): ?>
-                            <div style="font-size: 8px; color: var(--color-primary); font-style: italic;">
+                            <div style="font-size: 7px; color: var(--color-primary); font-style: italic;">
                                 Remise: -<?= format_price($it['discount_amount'], $sale['currency']) ?>
                             </div>
                         <?php endif; ?>
@@ -165,9 +174,9 @@ $items = $stmt->fetchAll();
                     <span>TOTAL</span>
                     <span><?= format_price($sale['total_amount'], $sale['currency']) ?></span>
                 </div>
-                <div style="margin-top:0.5rem; text-align:center;">
-                    <span class="badge badge-slate" style="font-size:9px; background: #f1f5f9;">
-                         PAYÉ PAR : <?= strtoupper($sale['payment_type']) ?>
+                <div style="margin-top:0.25rem; text-align:center;">
+                    <span style="font-size:8px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 800;">
+                         PAIEMENT : <?= strtoupper($sale['payment_type']) ?>
                     </span>
                 </div>
             </div>
@@ -176,6 +185,7 @@ $items = $stmt->fetchAll();
         <div class="invoice-footer">
             Merci de votre confiance. LXTRONIC
         </div>
+        <div class="footer-tagline">"Innovation At Your Service"</div>
     </div>
 </div>
 </body>

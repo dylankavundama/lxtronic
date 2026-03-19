@@ -183,6 +183,68 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
         document.getElementById('payAmount').max = max;
     }
     function closePaymentModal() { document.getElementById('paymentModal').classList.remove('open'); }
-</script>
+
+    // --- OFFLINE SUPPORT ---
+    function updateStatus() {
+        const h1 = document.querySelector('h1');
+        let status = document.getElementById('conn-status');
+        if (!status) {
+            status = document.createElement('span');
+            status.id = 'conn-status';
+            status.style = 'margin-left:8px; font-size:0.75rem; vertical-align:middle;';
+            h1.parentElement.appendChild(status);
+        }
+        if (navigator.onLine) {
+            status.innerText = '● En Ligne';
+            status.style.color = 'var(--color-success)';
+        } else {
+            status.innerText = '● Hors-Ligne';
+            status.style.color = 'var(--color-danger)';
+        }
+    }
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    window.addEventListener('load', updateStatus);
+
+    // Intercept Client Form
+    document.querySelector('#clientModal form').addEventListener('submit', async function(e) {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const payload = {
+                name: formData.get('name'),
+                phone: formData.get('phone')
+            };
+            // Note: Update not supported offline for simplicity, only new clients
+            if (formData.get('id')) {
+                return alert("La modification d'un client existant requiert une connexion.");
+            }
+            await queueAction('client', payload);
+            alert("👤 Client enregistré en local.\nIl sera ajouté dès le retour de la connexion.");
+            closeClientModal();
+        }
+    });
+
+    // Intercept Payment Form
+    document.querySelector('#paymentModal form').addEventListener('submit', async function(e) {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            alert("Désolé, l'enregistrement des paiements hors-ligne n'est pas encore supporté pour garantir la cohérence des soldes.");
+            // In a real app, we would store this and re-calculate local balance, 
+            // but that's much more complex for this MVP.
+        }
+    });
+
+    // Refresh Data from IndexedDB if offline
+    window.addEventListener('load', async () => {
+        if (!navigator.onLine) {
+            const offlineClients = await getData('clients');
+            if (offlineClients && offlineClients.length > 0) {
+                console.log("Clients: Loaded from offline storage");
+                // The table is already populated by cached PHP, 
+                // but we could refresh it here if needed.
+            }
+        }
+    });
 </body>
 </html>

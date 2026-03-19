@@ -151,7 +151,9 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
         <header class="page-header">
             <div>
                 <h1>Historique des Ventes</h1>
-                <p>Transactions récentes et facturation.</p>
+                <p>Transactions récentes et facturation. 
+                   <span id="conn-status" class="badge badge-green" style="margin-left:8px; font-size:0.7rem; vertical-align:middle;">En Ligne</span>
+                </p>
             </div>
         </header>
 
@@ -222,13 +224,31 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
             <!-- Options -->
             <div class="summary-grid">
                 <div class="form-group">
-                    <label class="form-label">Client</label>
+                    <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Client</span>
+                        <button type="button" onclick="toggleQuickClient()" class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:0.7rem; height:auto; color:var(--color-primary);">
+                            + Nouveau
+                        </button>
+                    </label>
                     <select id="clId" class="form-control">
                         <option value="">Client de passage</option>
                         <?php foreach($clients as $c): ?>
                             <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+
+                <!-- Quick Add Client Form (Initially Hidden) -->
+                <div id="quickClientForm" style="display:none; background:#f8fafc; padding:12px; border-radius:12px; border:1px solid #e2e8f0; margin-top:-8px; margin-bottom:8px; animation: fadeIn 0.2s ease;">
+                    <p style="font-size:0.75rem; font-weight:800; color:var(--color-primary); margin-bottom:8px; text-transform:uppercase;">Nouveau Client Rapide</p>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                        <input type="text" id="qClName" placeholder="Nom..." class="form-control form-control-sm">
+                        <input type="text" id="qClPhone" placeholder="Tél..." class="form-control form-control-sm">
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" onclick="saveQuickClient()" class="btn btn-primary btn-sm" style="flex:1; font-size:0.75rem;">Enregistrer</button>
+                        <button type="button" onclick="toggleQuickClient()" class="btn btn-ghost btn-sm" style="flex:1; font-size:0.75rem;">Annuler</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Devise</label>
@@ -368,17 +388,132 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
         sDisp.innerText = cur==='CDF' ? '≈ ' + fmt(totalUSD, 'USD') : '≈ ' + fmt(totalUSD*rate, 'CDF');
     }
 
-    function doSale() {
+    async function doSale() {
         if(!cart.length) return alert('Panier vide!');
         const payType = document.querySelector('input[name="pay_type"]:checked').value;
         const clientId = document.getElementById('clId').value;
         if(payType === 'credit' && !clientId) return alert('Sélectionnez un client pour le crédit.');
 
-        document.getElementById('cData').value = JSON.stringify(cart);
+        const cartData = JSON.stringify(cart);
+        
+        // --- OFFLINE CHECK ---
+        if (!navigator.onLine) {
+            try {
+                const payload = {
+                    cart_data: cartData,
+                    client_id: clientId,
+                    payment_type: payType,
+                    currency: cur
+                };
+                await queueAction('sale', payload);
+                alert("🛒 Vente enregistrée en local (HORS-LIGNE).\nElle sera synchronisée dès le retour de la connexion.");
+                closePOS();
+                return;
+            } catch (e) {
+                console.error(e);
+                return alert("Erreur lors de l'enregistrement local.");
+            }
+        }
+
+        document.getElementById('cData').value = cartData;
         document.getElementById('fClId').value = clientId;
         document.getElementById('fCurr').value = cur;
         document.getElementById('fPayType').value = payType;
         document.getElementById('sForm').submit();
+    }
+
+    // Connectivity Indicator Logic
+    function updateStatus() {
+        const badge = document.getElementById('conn-status');
+        if (navigator.onLine) {
+            badge.innerText = 'En Ligne';
+            badge.className = 'badge badge-green';
+        } else {
+            badge.innerText = 'Hors-Ligne';
+            badge.className = 'badge badge-red';
+        }
+    }
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+
+    // --- OFFLINE DATA POPULATION ---
+    // If we are offline, we might want to refresh the 'prods' and 'clients' from IndexedDB
+    // to ensure we have the most recent data even if using a cached page.
+    window.addEventListener('load', async () => {
+        if (!navigator.onLine) {
+            console.log("Sales: Offline mode, loading data from IndexedDB");
+            const offlineProds = await getData('products');
+            if (offlineProds && offlineProds.length > 0) {
+                // Update the global 'prods' variable used by search
+                prods.splice(0, prods.length, ...offlineProds);
+                console.log("Sales: Products updated from offline storage");
+            }
+            
+            const offlineClients = await getData('clients');
+            if (offlineClients && offlineClients.length > 0) {
+                const sel = document.getElementById('clId');
+                // Keep 'Client de passage'
+                const first = sel.options[0];
+                sel.innerHTML = '';
+                sel.add(first);
+                offlineClients.forEach(c => {
+                    sel.add(new Option(c.name, c.id));
+                });
+                console.log("Sales: Clients updated from offline storage");
+            }
+        }
+    });
+
+    // --- QUICK CLIENT LOGIC ---
+    function toggleQuickClient() {
+        const f = document.getElementById('quickClientForm');
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        if(f.style.display === 'block') document.getElementById('qClName').focus();
+    }
+
+    async function saveQuickClient() {
+        const name = document.getElementById('qClName').value;
+        const phone = document.getElementById('qClPhone').value;
+        const btn = event.target;
+
+        if(!name) return alert('Le nom est requis');
+
+        btn.disabled = true;
+        btn.innerText = 'Patientez...';
+
+        try {
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('phone', phone);
+
+            const res = await fetch('quick_add_client.php', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                // Add to select and select it
+                const sel = document.getElementById('clId');
+                const opt = new Option(data.name, data.id);
+                sel.add(opt);
+                sel.value = data.id;
+                
+                // Reset and close
+                document.getElementById('qClName').value = '';
+                document.getElementById('qClPhone').value = '';
+                toggleQuickClient();
+            } else {
+                alert(data.message || 'Erreur lors de l’ajout');
+            }
+        } catch(e) {
+            console.error(e);
+            alert('Erreur réseau');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Enregistrer';
+        }
     }
 
     // Modal behavior for radio buttons active state
@@ -392,5 +527,6 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     // Initial state trigger
     document.getElementById('mCash').dispatchEvent(new Event('change'));
 </script>
+<script src="assets/js/offline_sync.js"></script>
 </body>
 </html>

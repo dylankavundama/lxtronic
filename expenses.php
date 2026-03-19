@@ -16,10 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if (!empty($title) && $amount > 0) {
             $pdo->prepare("INSERT INTO expenses (user_id,title,amount,currency,description,expense_date) VALUES(?,?,?,?,?,?)")->execute([$_SESSION['user_id'],$title,$amount,$currency,$description,$date]);
             $message = "Dépense enregistrée.";
+            if (isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                echo json_encode(['success' => true, 'message' => $message]);
+                exit;
+            }
         }
     } elseif ($_POST['action'] === 'delete') {
         $pdo->prepare("DELETE FROM expenses WHERE id=?")->execute([$_POST['id']]);
         $message = "Dépense supprimée.";
+        if (isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+            echo json_encode(['success' => true, 'message' => $message]);
+            exit;
+        }
     }
 }
 
@@ -137,6 +145,47 @@ $total_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF' 
 <script>
     const em = document.getElementById('expModal');
     em.addEventListener('click', e => { if(e.target===em) em.classList.remove('open'); });
+
+    // --- OFFLINE SUPPORT ---
+    function updateStatus() {
+        const h1 = document.querySelector('h1');
+        let status = document.getElementById('conn-status');
+        if (!status) {
+            status = document.createElement('span');
+            status.id = 'conn-status';
+            status.style = 'margin-left:8px; font-size:0.75rem; vertical-align:middle;';
+            h1.parentElement.appendChild(status);
+        }
+        if (navigator.onLine) {
+            status.innerText = '● En Ligne';
+            status.style.color = 'var(--color-success)';
+        } else {
+            status.innerText = '● Hors-Ligne';
+            status.style.color = 'var(--color-danger)';
+        }
+    }
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    window.addEventListener('load', updateStatus);
+
+    // Intercept Expense Form
+    document.querySelector('#expModal form').addEventListener('submit', async function(e) {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const payload = {
+                title: formData.get('title'),
+                amount: formData.get('amount'),
+                currency: formData.get('currency'),
+                description: formData.get('description'),
+                expense_date: formData.get('expense_date')
+            };
+
+            await queueAction('expense', payload);
+            alert("💸 Dépense enregistrée en local.\nElle sera synchronisée dès le retour de la connexion.");
+            document.getElementById('expModal').classList.remove('open');
+        }
+    });
 </script>
 </body>
 </html>

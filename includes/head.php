@@ -1,5 +1,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+
 <!-- Favicon -->
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="shortcut icon" type="image/jpeg" href="favicon.jpg">
@@ -21,5 +25,14 @@ if (file_exists($page_css)) {
   // Disable Tailwind's preflight/reset to avoid conflicts with our CSS
   tailwind.config = { corePlugins: { preflight: false } }
 </script>
-<script src="assets/js/main.js" defer></script>
 
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('SW Registered'))
+        .catch(err => console.log('SW Reg Failed', err));
+    });
+  }
+</script>
+<script src="assets/js/offline_sync.js"></script>

@@ -223,30 +223,3 @@ img {
         font-size: 15px;
     }
 }
-
-/* ============================================
-   NAVIGATION LOADER
-   Top progress bar for page transitions
-   ============================================ */
-#nav-loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 3px;
-    background: var(--color-primary);
-    z-index: 9999;
-    transition: width 0.3s ease, opacity 0.3s ease;
-    box-shadow: 0 0 10px var(--color-primary-shadow), 0 0 5px var(--color-primary);
-    pointer-events: none;
-    opacity: 0;
-}
-
-#nav-loader.loading {
-    opacity: 1;
-}
-
-#nav-loader.finished {
-    width: 100% !important;
-    opacity: 0;
-}
