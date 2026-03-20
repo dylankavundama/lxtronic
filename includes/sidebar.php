@@ -9,7 +9,7 @@ $current = basename($_SERVER['PHP_SELF']);
     <!-- Logo -->
     <div class="sidebar-logo">
         <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-            <img src="logo.jpg" alt="Logo" style="width:44px;height:44px;object-fit:contain;border-radius:10px;">
+            <img src="logo.jpg" alt="Logo" style="width:44px;height:44px;object-fit:contain;border-radius:10px;" onerror='console.error("LOGO: Failed to load logo.jpg in sidebar")'>
             <span>LXTRONIC</span>
         </div>
         <button class="burger-btn no-print" onclick="toggleSidebar()" style="display: none; color: white;" id="closeSidebar">
@@ -92,6 +92,24 @@ $current = basename($_SERVER['PHP_SELF']);
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- PWA Installation Guide -->
+        <div style="margin-top: auto; padding: 1.25rem;">
+            <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; border: 1px border: 1px solid rgba(255,255,255,0.1);">
+                <p style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Mode Hors-Ligne
+                </p>
+                <p style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin-bottom: 8px;">
+                    Pour utiliser l'app sans internet :
+                </p>
+                <div style="font-size: 10px; color: #94a3b8; display: grid; gap: 4px;">
+                    <span style="display:flex; align-items:start; gap:4px;"><b>iOS:</b> Partager > Sur l'écran d'accueil</span>
+                    <span style="display:flex; align-items:start; gap:4px;"><b>Desktop:</b> Clic sur l'icône d'installation (URL)</span>
+                    <span style="display:flex; align-items:start; gap:4px;"><b>Android:</b> Ajouter à l'écran d'accueil</span>
+                </div>
+            </div>
+        </div>
     </nav>
 
     <!-- User Footer -->

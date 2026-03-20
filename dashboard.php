@@ -44,7 +44,7 @@ $recent_sales = $pdo->query("SELECT s.*, c.name as client_name FROM sales s LEFT
                 <p>État de votre commerce aujourd'hui.</p>
             </div>
             <div class="header-actions">
-                <a href="sales.php" class="btn btn-primary btn-lg">
+                <a href="sales.php?new_sale=1" class="btn btn-primary btn-lg">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Nouvelle Vente
                 </a>

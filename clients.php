@@ -95,10 +95,8 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
                         <?php else: ?>
                             <?php foreach($clients as $c): ?>
                             <tr>
-                                <td>
-                                    <p class="col-name"><?= htmlspecialchars($c['name']) ?></p>
-                                    <p class="col-sub"><?= htmlspecialchars($c['phone']) ?></p>
-                                </td>
+                                <td><p class="col-name"><?= htmlspecialchars($c['name']) ?></p></td>
+                                <td><p class="col-sub"><?= htmlspecialchars($c['phone'] ?: '-') ?></p></td>
                                 <td><span class="<?= $c['total_debt_usd'] > 0 ? 'text-danger' : 'text-success' ?> font-bold"><?= format_price($c['total_debt_usd'], 'USD') ?></span></td>
                                 <td><span class="<?= $c['total_debt_cdf'] > 0 ? 'text-danger' : 'text-success' ?> font-bold"><?= format_price($c['total_debt_cdf'], 'CDF') ?></span></td>
                                 <td>

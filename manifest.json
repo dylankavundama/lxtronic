@@ -11,11 +11,20 @@
     {
       "src": "logo.jpg",
       "type": "image/jpeg",
-      "sizes": "512x512"
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any"
     }
   ],
   "start_url": "dashboard.php",
   "display": "standalone",
+  "orientation": "any",
   "theme_color": "#2563eb",
   "background_color": "#ffffff"
 }
+

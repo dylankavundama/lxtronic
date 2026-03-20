@@ -80,7 +80,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     <style>
         .fab { position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; border: none; }
         .fab:hover { transform: scale(1.1) rotate(0deg); background: var(--color-primary-dark); }
-        .fab svg { width: 32px; height: 32px; }
+        .fab svg { width: 32px; height: 32px; pointer-events: none; }
 
         /* Mini Dialog Styles */
         #pos-overlay { 
@@ -179,7 +179,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
             </div>
         </div>
 
-        <button class="fab" id="btnNewSale" title="Nouvelle Vente">
+        <button type="button" class="fab" id="btnNewSale" title="Nouvelle Vente">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
         </button>
     </main>
@@ -300,24 +300,52 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     const pSearch = document.getElementById('pSearch');
     const resBox = document.getElementById('resBox');
 
-    document.getElementById('btnNewSale').onclick = () => { overlay.classList.add('open'); pSearch.focus(); };
-    function closePOS() { overlay.classList.remove('open'); cart=[]; render(); pSearch.value=''; }
+    function openPOS() { 
+        console.log("POS: Opening dialog...");
+        overlay.classList.add('open'); 
+        pSearch.focus(); 
+    }
+    function closePOS() { 
+        console.log("POS: Closing dialog...");
+        overlay.classList.remove('open'); 
+        cart=[]; 
+        render(); 
+        pSearch.value=''; 
+    }
 
-    const fmt = (n, c) => c==='CDF' ? n.toLocaleString('fr-FR')+' FC' : '$'+n.toFixed(2);
+    const btnNewSale = document.getElementById('btnNewSale');
+    if (btnNewSale) {
+        btnNewSale.onclick = function() {
+            console.log("FAB: New Sale button clicked");
+            openPOS();
+        };
+    } else {
+        console.error("FAB: Button 'btnNewSale' not found in DOM");
+    }
+
+    // Auto-open POS if ?new_sale=1 is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('new_sale') === '1') {
+        openPOS();
+    }
+
+    const fmt = function(n, c) { return c==='CDF' ? n.toLocaleString('fr-FR')+' FC' : '$'+n.toFixed(2); };
 
     function searchProd() {
         const q = pSearch.value.toLowerCase();
         if(!q) { resBox.classList.remove('open'); return; }
-        const matches = prods.filter(p => p.name.toLowerCase().includes(q)).slice(0, 5);
+        const matches = prods.filter(function(p) { return p.name.toLowerCase().includes(q); }).slice(0, 5);
         if(matches.length) {
-            resBox.innerHTML = matches.map(m => `<div class="res-item" onclick='addToCart(${JSON.stringify(m)})'><span class="res-item-name">${m.name}</span><span class="res-item-price">$${m.sell_price}</span></div>`).join('');
+            resBox.innerHTML = matches.map(function(m) { 
+                return '<div class="res-item" onclick=\'addToCart(' + JSON.stringify(m) + ')\'><span class="res-item-name">' + m.name + '</span><span class="res-item-price">$' + m.sell_price + '</span></div>';
+            }).join('');
             resBox.classList.add('open');
         } else { resBox.classList.remove('open'); }
     }
 
     function addToCart(p) {
-        let it = cart.find(x => x.id == p.id);
-        if (it) { it.quantity++; } else { cart.push({...p, quantity:1, price:parseFloat(p.sell_price), discount:0}); }
+        let it = cart.find(function(x) { return x.id == p.id; });
+        if (it) { it.quantity++; } else { cart.push(Object.assign({}, p, {quantity:1, price:parseFloat(p.sell_price), discount:0})); }
         pSearch.value=''; resBox.classList.remove('open'); 
         document.getElementById('pSelect').value = ''; // Reset select
         render();
@@ -340,10 +368,10 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     }
 
     function updQty(id, d) {
-        let it = cart.find(x => x.id == id);
+        let it = cart.find(function(x) { return x.id == id; });
         if (!it) return;
         it.quantity += d;
-        if (it.quantity <= 0) cart = cart.filter(x => x.id != id);
+        if (it.quantity <= 0) cart = cart.filter(function(x) { return x.id != id; });
         render();
     }
 
@@ -365,22 +393,23 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
         }
 
         let totalUSD = 0;
-        list.innerHTML = cart.map(it => {
+        list.innerHTML = cart.map(function(it) {
             const sub = (it.price - it.discount) * it.quantity; totalUSD += sub;
-            return `<div class="cart-item-mini" style="grid-template-columns: 1fr auto auto auto;">
-                <div>
-                    <span style="font-weight:700; font-size:0.85rem;">${it.name}</span>
-                    <div style="margin-top:4px;">
-                        <span class="discount-label">Réduction ($)</span>
-                        <input type="number" class="discount-input" value="${it.discount}" step="0.01" min="0" max="${(it.price * 0.1).toFixed(2)}" onchange="updDisc(${it.id}, this.value)">
-                    </div>
-                </div>
-                <div class="qty-ctrl"><button onclick="updQty(${it.id},-1)">−</button><span>${it.quantity}</span><button onclick="updQty(${it.id},1)">+</button></div>
-                <div style="text-align:right;">
-                    <div style="font-weight:800; color:var(--color-slate-700);">${fmt(cur==='CDF'?sub*rate:sub, cur)}</div>
-                    ${it.discount > 0 ? `<div style="font-size:0.7rem; color:var(--color-primary); font-weight:700;">-${fmt(cur==='CDF'?it.discount*rate*it.quantity:it.discount*it.quantity, cur)}</div>` : ''}
-                </div>
-            </div>`;
+            const disc_fmt = it.discount > 0 ? '<div style="font-size:0.7rem; color:var(--color-primary); font-weight:700;">-' + fmt(cur==='CDF'?it.discount*rate*it.quantity:it.discount*it.quantity, cur) + '</div>' : '';
+            return '<div class="cart-item-mini" style="grid-template-columns: 1fr auto auto auto;">' +
+                '<div>' +
+                    '<span style="font-weight:700; font-size:0.85rem;">' + it.name + '</span>' +
+                    '<div style="margin-top:4px;">' +
+                        '<span class="discount-label">Réduction ($)</span>' +
+                        '<input type="number" class="discount-input" value="' + it.discount + '" step="0.01" min="0" max="' + (it.price * 0.1).toFixed(2) + '" onchange="updDisc(' + it.id + ', this.value)">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="qty-ctrl"><button onclick="updQty(' + it.id + ',-1)">−</button><span>' + it.quantity + '</span><button onclick="updQty(' + it.id + ',1)">+</button></div>' +
+                '<div style="text-align:right;">' +
+                    '<div style="font-weight:800; color:var(--color-slate-700);">' + fmt(cur==='CDF'?sub*rate:sub, cur) + '</div>' +
+                    disc_fmt +
+                '</div>' +
+            '</div>';
         }).join('');
 
         const final = cur==='CDF' ? totalUSD*rate : totalUSD;
@@ -440,7 +469,7 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     // --- OFFLINE DATA POPULATION ---
     // If we are offline, we might want to refresh the 'prods' and 'clients' from IndexedDB
     // to ensure we have the most recent data even if using a cached page.
-    window.addEventListener('load', async () => {
+    window.addEventListener('load', async function() {
         if (!navigator.onLine) {
             console.log("Sales: Offline mode, loading data from IndexedDB");
             const offlineProds = await getData('products');
@@ -517,9 +546,9 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     }
 
     // Modal behavior for radio buttons active state
-    document.querySelectorAll('input[name="pay_type"]').forEach(rad => {
-        rad.addEventListener('change', () => {
-            document.querySelectorAll('input[name="pay_type"]').forEach(r => r.nextElementSibling.style.borderColor = '#e2e8f0');
+    document.querySelectorAll('input[name="pay_type"]').forEach(function(rad) {
+        rad.addEventListener('change', function() {
+            document.querySelectorAll('input[name="pay_type"]').forEach(function(r) { r.nextElementSibling.style.borderColor = '#e2e8f0'; r.nextElementSibling.style.background = 'none'; });
             rad.nextElementSibling.style.borderColor = 'var(--color-primary)';
             rad.nextElementSibling.style.background = 'rgba(37, 99, 235, 0.05)';
         });
@@ -527,6 +556,6 @@ $sales = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FR
     // Initial state trigger
     document.getElementById('mCash').dispatchEvent(new Event('change'));
 </script>
-<script src="assets/js/offline_sync.js"></script>
+
 </body>
 </html>

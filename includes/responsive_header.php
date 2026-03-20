@@ -8,7 +8,7 @@
         </button>
         <span style="font-weight: 800; font-size: 1.1rem; color: var(--color-slate-800);">LXTRONIC</span>
     </div>
-    <img src="logo.jpg" alt="Logo" style="width:32px; height:32px; object-fit:contain; border-radius:6px;">
+    <img src="logo.jpg" alt="Logo" style="width:32px; height:32px; object-fit:contain; border-radius:6px;" onerror='console.error("LOGO: Failed to load logo.jpg in mobile header")'>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>

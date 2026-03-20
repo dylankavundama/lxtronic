@@ -1,5 +1,6 @@
-const CACHE_NAME = 'lxtronic-v2';
+const CACHE_NAME = 'lxtronic-v2.1';
 const ASSETS = [
+    './',
     'index.php',
     'dashboard.php',
     'sales.php',
@@ -20,7 +21,9 @@ const ASSETS = [
     'assets/js/offline_sync.js',
     'logo.jpg',
     'favicon.jpg',
-    'manifest.json'
+    'manifest.json',
+    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Courier+Prime&display=swap',
+    'https://cdn.tailwindcss.com'
 ];
 
 // Installation : Mise en cache des ressources de base
@@ -28,7 +31,8 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             console.log('SW: Pre-caching all vital assets');
-            return cache.addAll(ASSETS);
+            // use Promise.allSettled to ensure installation completes even if one asset fails
+            return Promise.allSettled(ASSETS.map(asset => cache.add(asset)));
         })
     );
     self.skipWaiting();
@@ -48,11 +52,10 @@ self.addEventListener('activate', event => {
 
 // Stratégie : Network First (Priorité réseau, fallback cache)
 self.addEventListener('fetch', event => {
-    // Ne pas intercepter les requêtes non-GET ou externes si possible
     if (event.request.method !== 'GET') return;
 
-    // Ignorer les requêtes spécifiques à la sync (JSON)
-    if (event.request.url.includes('sync_')) return;
+    // Ignorer les requêtes spécifiques à la sync (JSON) ou PHP d'action
+    if (event.request.url.includes('sync_') || event.request.url.includes('quick_add_')) return;
 
     event.respondWith(
         fetch(event.request)
@@ -67,7 +70,15 @@ self.addEventListener('fetch', event => {
                 return response;
             })
             .catch(() => {
-                return caches.match(event.request);
+                // Si réseau échoue, essayer le cache
+                return caches.match(event.request).then(cachedResponse => {
+                    if (cachedResponse) return cachedResponse;
+
+                    // Si c'est une navigation (page PHP), on peut rediriger vers le dashboard par défaut
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('dashboard.php');
+                    }
+                });
             })
     );
 });
