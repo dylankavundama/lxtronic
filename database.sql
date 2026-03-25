@@ -110,3 +110,29 @@ CREATE TABLE IF NOT EXISTS settings (
 INSERT INTO settings (setting_key, setting_value) VALUES ('usd_to_cdf', '2800');
 INSERT INTO settings (setting_key, setting_value) VALUES ('app_name', 'LxTronic');
 INSERT INTO settings (setting_key, setting_value) VALUES ('app_slogan', 'Innovation At Your Service');
+
+-- ============================================
+-- MODULE BANQUE (SYSTÈME INDÉPENDANT)
+-- ============================================
+
+-- Table: bank_accounts
+CREATE TABLE IF NOT EXISTS bank_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_name VARCHAR(100) NOT NULL,
+    owner_name VARCHAR(100) NOT NULL,
+    balance_usd DECIMAL(15, 2) DEFAULT 0.00,
+    balance_cdf DECIMAL(15, 2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: bank_transactions
+CREATE TABLE IF NOT EXISTS bank_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT,
+    type ENUM('deposit', 'withdrawal') NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    currency ENUM('USD', 'CDF') NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (account_id) REFERENCES bank_accounts(id) ON DELETE CASCADE
+);

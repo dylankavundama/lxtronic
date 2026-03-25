@@ -102,9 +102,9 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
                                 <td>
                                     <div class="row-actions">
                                         <?php if ($c['total_debt_usd'] > 0 || $c['total_debt_cdf'] > 0): ?>
-                                        <button onclick='openPaymentModal(<?= json_encode($c) ?>)' class="btn btn-success" style="padding:6px 14px;font-size:0.8rem;border-radius:10px;">Payer</button>
+                                        <button onclick="openPaymentModal(<?= htmlspecialchars(json_encode($c), ENT_QUOTES, 'UTF-8') ?>)" class="btn btn-success" style="padding:6px 14px;font-size:0.8rem;border-radius:10px;">Payer</button>
                                         <?php endif; ?>
-                                        <button onclick='editClient(<?= json_encode($c) ?>)' class="btn-icon btn-icon-primary"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                        <button onclick="editClient(<?= htmlspecialchars(json_encode($c), ENT_QUOTES, 'UTF-8') ?>)" class="btn-icon btn-icon-primary"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
                                         <form method="POST" onsubmit="return confirm('Supprimer ?');" style="display:inline"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $c['id'] ?>"><button type="submit" class="btn-icon btn-icon-danger"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></form>
                                     </div>
                                 </td>
@@ -244,5 +244,6 @@ $clients = $pdo->query("SELECT * FROM clients ORDER BY (total_debt_usd + total_d
             }
         }
     });
+</script>
 </body>
 </html>
