@@ -14,11 +14,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $description = trim($_POST['description'] ?? '');
         $date = $_POST['expense_date'] ?? date('Y-m-d');
         if (!empty($title) && $amount > 0) {
-            $pdo->prepare("INSERT INTO expenses (user_id,title,amount,currency,description,expense_date) VALUES(?,?,?,?,?,?)")->execute([$_SESSION['user_id'],$title,$amount,$currency,$description,$date]);
-            $message = "Dépense enregistrée.";
-            if (isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
-                echo json_encode(['success' => true, 'message' => $message]);
-                exit;
+            // Calculer le solde global disponible
+            $stmt_sales = $pdo->prepare("SELECT SUM(total_amount) FROM sales WHERE payment_type = 'comptant' AND currency = ?");
+            $stmt_sales->execute([$currency]);
+            $cash_sales = $stmt_sales->fetchColumn() ?: 0;
+
+            $stmt_payments = $pdo->prepare("SELECT SUM(amount_paid) FROM payments WHERE currency = ?");
+            $stmt_payments->execute([$currency]);
+            $debt_payments = $stmt_payments->fetchColumn() ?: 0;
+
+            $stmt_expenses = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE currency = ?");
+            $stmt_expenses->execute([$currency]);
+            $past_expenses = $stmt_expenses->fetchColumn() ?: 0;
+
+            $available_balance = ($cash_sales + $debt_payments) - $past_expenses;
+
+            if ($amount > $available_balance) {
+                $error = "Fonds insuffisants en caisse. Solde disponible : " . format_price($available_balance, $currency);
+                if (isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                    echo json_encode(['success' => false, 'message' => $error]); // used as message in AJAX logic below
+                    exit;
+                }
+            } else {
+                $pdo->prepare("INSERT INTO expenses (user_id,title,amount,currency,description,expense_date) VALUES(?,?,?,?,?,?)")->execute([$_SESSION['user_id'],$title,$amount,$currency,$description,$date]);
+                $message = "Dépense enregistrée.";
+                if (isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+                    echo json_encode(['success' => true, 'message' => $message]);
+                    exit;
+                }
             }
         }
     } elseif ($_POST['action'] === 'delete') {
@@ -65,6 +88,7 @@ $total_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF' 
         </header>
 
         <?php if ($message): ?><div class="alert alert-success animate-pulse"><?= $message ?></div><?php endif; ?>
+        <?php if ($error): ?><div class="alert alert-danger animate-pulse"><?= $error ?></div><?php endif; ?>
 
         <div class="card">
             <div class="data-table-wrapper table-responsive">

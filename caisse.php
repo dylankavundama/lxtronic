@@ -3,42 +3,43 @@ require_once 'config/db.php';
 require_once 'includes/helpers.php';
 check_auth();
 
-// Date du jour par défaut
-$date_filter = $_GET['date'] ?? date('Y-m-d');
+// Filtres (Mois et Année)
+$filter_month = $_GET['month'] ?? date('m');
+$filter_year  = $_GET['year']  ?? date('Y');
 $usd_to_cdf = get_setting('usd_to_cdf', 2800);
 
 // --- COMPTE USD ---
 // 1. Ventes au comptant USD
-$stmt = $pdo->prepare("SELECT SUM(total_amount) FROM sales WHERE DATE(created_at) = ? AND payment_type = 'comptant' AND currency = 'USD'");
-$stmt->execute([$date_filter]);
+$stmt = $pdo->prepare("SELECT SUM(total_amount) FROM sales WHERE MONTH(created_at) = ? AND YEAR(created_at) = ? AND payment_type = 'comptant' AND currency = 'USD'");
+$stmt->execute([$filter_month, $filter_year]);
 $cash_sales_usd = $stmt->fetchColumn() ?: 0;
 
 // 2. Paiements de dettes USD
-$stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM payments WHERE DATE(payment_date) = ? AND currency = 'USD'");
-$stmt->execute([$date_filter]);
+$stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM payments WHERE MONTH(payment_date) = ? AND YEAR(payment_date) = ? AND currency = 'USD'");
+$stmt->execute([$filter_month, $filter_year]);
 $debt_payments_usd = $stmt->fetchColumn() ?: 0;
 
 // 3. Dépenses USD
-$stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date = ? AND currency = 'USD'");
-$stmt->execute([$date_filter]);
+$stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE MONTH(expense_date) = ? AND YEAR(expense_date) = ? AND currency = 'USD'");
+$stmt->execute([$filter_month, $filter_year]);
 $expenses_usd = $stmt->fetchColumn() ?: 0;
 
 $net_usd = ($cash_sales_usd + $debt_payments_usd) - $expenses_usd;
 
 // --- COMPTE CDF ---
 // 1. Ventes au comptant CDF
-$stmt = $pdo->prepare("SELECT SUM(total_amount) FROM sales WHERE DATE(created_at) = ? AND payment_type = 'comptant' AND currency = 'CDF'");
-$stmt->execute([$date_filter]);
+$stmt = $pdo->prepare("SELECT SUM(total_amount) FROM sales WHERE MONTH(created_at) = ? AND YEAR(created_at) = ? AND payment_type = 'comptant' AND currency = 'CDF'");
+$stmt->execute([$filter_month, $filter_year]);
 $cash_sales_cdf = $stmt->fetchColumn() ?: 0;
 
 // 2. Paiements de dettes CDF
-$stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM payments WHERE DATE(payment_date) = ? AND currency = 'CDF'");
-$stmt->execute([$date_filter]);
+$stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM payments WHERE MONTH(payment_date) = ? AND YEAR(payment_date) = ? AND currency = 'CDF'");
+$stmt->execute([$filter_month, $filter_year]);
 $debt_payments_cdf = $stmt->fetchColumn() ?: 0;
 
 // 3. Dépenses CDF
-$stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date = ? AND currency = 'CDF'");
-$stmt->execute([$date_filter]);
+$stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE MONTH(expense_date) = ? AND YEAR(expense_date) = ? AND currency = 'CDF'");
+$stmt->execute([$filter_month, $filter_year]);
 $expenses_cdf = $stmt->fetchColumn() ?: 0;
 
 $net_cdf = ($cash_sales_cdf + $debt_payments_cdf) - $expenses_cdf;
@@ -46,16 +47,16 @@ $net_cdf = ($cash_sales_cdf + $debt_payments_cdf) - $expenses_cdf;
 // Logs cumulés
 $transactions = $pdo->prepare("
     (SELECT 'Vente' as type, total_amount as amount, currency, created_at as date, 'Entrée' as category 
-     FROM sales WHERE DATE(created_at) = ? AND payment_type = 'comptant')
+     FROM sales WHERE MONTH(created_at) = ? AND YEAR(created_at) = ? AND payment_type = 'comptant')
     UNION ALL
     (SELECT 'Paiement Dette' as type, amount_paid as amount, currency, payment_date as date, 'Entrée' as category 
-     FROM payments WHERE DATE(payment_date) = ?)
+     FROM payments WHERE MONTH(payment_date) = ? AND YEAR(payment_date) = ?)
     UNION ALL
     (SELECT title as type, amount, currency, created_at as date, 'Sortie' as category 
-     FROM expenses WHERE expense_date = ?)
+     FROM expenses WHERE MONTH(expense_date) = ? AND YEAR(expense_date) = ?)
     ORDER BY date DESC
 ");
-$transactions->execute([$date_filter, $date_filter, $date_filter]);
+$transactions->execute([$filter_month, $filter_year, $filter_month, $filter_year, $filter_month, $filter_year]);
 $logs = $transactions->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -70,13 +71,29 @@ $logs = $transactions->fetchAll();
     <?php include 'includes/responsive_header.php'; ?>
 
     <main class="main-content">
+<?php
+$months = [
+    '01'=>'Janvier', '02'=>'Février', '03'=>'Mars', '04'=>'Avril',
+    '05'=>'Mai', '06'=>'Juin', '07'=>'Juillet', '08'=>'Août',
+    '09'=>'Septembre', '10'=>'Octobre', '11'=>'Novembre', '12'=>'Décembre'
+];
+?>
         <header class="page-header">
             <div>
                 <h1>Ma Caisse Multi-Devise</h1>
-                <p>Suivi séparé USD et CDF pour le <strong><?= date('d/m/Y', strtotime($date_filter)) ?></strong></p>
+                <p>Suivi séparé USD et CDF pour <strong><?= $months[sprintf('%02d', $filter_month)] ?> <?= $filter_year ?></strong></p>
             </div>
-            <form action="" method="GET" class="header-actions">
-                <input type="date" name="date" value="<?= $date_filter ?>" class="form-control" onchange="this.form.submit()">
+            <form action="" method="GET" class="header-actions" style="display: flex; gap: 10px;">
+                <select name="month" class="form-control" onchange="this.form.submit()">
+                    <?php foreach($months as $num => $name): ?>
+                        <option value="<?= $num ?>" <?= $filter_month == $num ? 'selected' : '' ?>><?= $name ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <select name="year" class="form-control" onchange="this.form.submit()">
+                    <?php for($y = 2024; $y <= date('Y') + 2; $y++): ?>
+                        <option value="<?= $y ?>" <?= $filter_year == $y ? 'selected' : '' ?>><?= $y ?></option>
+                    <?php endfor; ?>
+                </select>
             </form>
         </header>
 
@@ -131,7 +148,7 @@ $logs = $transactions->fetchAll();
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Heure</th>
+                            <th>Date / Heure</th>
                             <th>Description</th>
                             <th>Mouvement</th>
                             <th style="text-align: right;">Montant</th>
@@ -139,11 +156,11 @@ $logs = $transactions->fetchAll();
                     </thead>
                     <tbody>
                         <?php if (empty($logs)): ?>
-                            <tr><td colspan="4" class="table-empty">Aucun mouvement aujourd'hui.</td></tr>
+                            <tr><td colspan="4" class="table-empty">Aucun mouvement pour ce mois.</td></tr>
                         <?php else: ?>
                             <?php foreach ($logs as $log): ?>
                             <tr>
-                                <td class="text-muted"><?= date('H:i', strtotime($log['date'])) ?></td>
+                                <td class="text-muted"><?= date('d/m à H:i', strtotime($log['date'])) ?></td>
                                 <td class="col-name"><?= htmlspecialchars($log['type']) ?></td>
                                 <td>
                                     <span class="badge <?= $log['category'] == 'Entrée' ? 'badge-green' : 'badge-red' ?>">

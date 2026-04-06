@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS clients (
     phone VARCHAR(20),
     email VARCHAR(100),
     address TEXT,
-    total_debt DECIMAL(10, 2) DEFAULT 0.00,
+    total_debt_usd DECIMAL(10, 2) DEFAULT 0.00,
+    total_debt_cdf DECIMAL(10, 2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

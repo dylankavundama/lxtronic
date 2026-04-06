@@ -1,0 +1,13 @@
+# Credentials & config sensible
+.env
+config/db.php
+
+# Sessions PHP
+sessions/
+
+# Fichiers systeme
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

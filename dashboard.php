@@ -20,6 +20,30 @@ $debt_cdf = $pdo->query("SELECT SUM(total_debt_cdf) FROM clients")->fetchColumn(
 $low_stock_count = $pdo->query("SELECT COUNT(*) FROM products WHERE stock_quantity <= min_stock_threshold")->fetchColumn() ?: 0;
 
 $recent_sales = $pdo->query("SELECT s.*, c.name as client_name FROM sales s LEFT JOIN clients c ON s.client_id = c.id ORDER BY s.created_at DESC LIMIT 6")->fetchAll();
+
+// Données graphique : ventes des 7 derniers jours (équivalent USD)
+$chart_raw = $pdo->query("
+    SELECT
+        DATE(created_at) as sale_date,
+        SUM(CASE WHEN currency = 'USD' THEN total_amount ELSE total_amount / " . $usd_to_cdf . " END) as total_usd_equiv
+    FROM sales
+    WHERE created_at >= CURDATE() - INTERVAL 6 DAY
+    GROUP BY DATE(created_at)
+    ORDER BY sale_date ASC
+")->fetchAll();
+
+// Construire tableau sur 7 jours (avec 0 pour les jours sans vente)
+$chart_data = [];
+$chart_labels = [];
+for ($i = 6; $i >= 0; $i--) {
+    $d = date('Y-m-d', strtotime("-$i days"));
+    $label = date('D', strtotime($d)); // Mon, Tue...
+    $chart_labels[] = "'$label'";
+    $found = array_filter($chart_raw, fn($r) => $r['sale_date'] === $d);
+    $chart_data[] = $found ? round(array_values($found)[0]['total_usd_equiv'], 2) : 0;
+}
+$chart_labels_js = implode(',', $chart_labels);
+$chart_data_js   = implode(',', $chart_data);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -147,10 +171,10 @@ $recent_sales = $pdo->query("SELECT s.*, c.name as client_name FROM sales s LEFT
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            labels: [<?= $chart_labels_js ?>],
             datasets: [{
-                label: 'Ventes (USD-Equivalent)',
-                data: [45, 120, 85, 210, 160, 340, 95],
+                label: 'Ventes (USD-Équivalent)',
+                data: [<?= $chart_data_js ?>],
                 borderColor: '#2563eb',
                 backgroundColor: 'rgba(37, 99, 235, 0.08)',
                 borderWidth: 3,

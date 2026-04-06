@@ -1,15 +1,7 @@
 <?php
 require_once '../config/db.php';
-
-// Correction pour les environnements d'hébergement avec des chemins de session mal configurés
-$session_path = dirname(__DIR__) . '/sessions';
-if (!is_dir($session_path)) {
-    @mkdir($session_path, 0777, true);
-}
-if (is_writable($session_path)) {
-    session_save_path($session_path);
-}
-session_start();
+require_once '../includes/helpers.php';
+check_auth();
 
 // --- AUTO-MIGRATION (Création des tables si inexistantes) ---
 $pdo->exec("
@@ -32,20 +24,6 @@ $pdo->exec("
         FOREIGN KEY (account_id) REFERENCES bank_accounts(id) ON DELETE CASCADE
     );
 ");
-
-// Redirection si non connecté
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit();
-}
-
-// Aide pour formatage prix (copié pour indépendance ou require relatif)
-function format_price_local($amount, $currency = 'USD') {
-    if ($currency === 'CDF') {
-        return number_format($amount, 0, '.', ' ') . ' FC';
-    }
-    return '$' . number_format($amount, 2, '.', ' ');
-}
 
 $message = ""; $error = "";
 
@@ -79,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     ->execute([$acc_id, $type, $amount, $currency, $desc]);
                 
                 $pdo->commit();
-                $message = "Opération effectuée : " . ($type==='deposit'?'Dépôt':'Retrait') . " de " . format_price_local($amount, $currency);
+                $message = "Opération effectuée : " . ($type==='deposit'?'Dépôt':'Retrait') . " de " . format_price($amount, $currency);
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $error = "Erreur : " . $e->getMessage();
@@ -106,8 +84,7 @@ $stats = $pdo->query("SELECT SUM(balance_usd) as total_usd, SUM(balance_cdf) as 
     <link rel="stylesheet" href="../assets/css/layout.css">
     <link rel="stylesheet" href="../assets/css/components.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { corePlugins: { preflight: false } }</script>
+
     <style>
         .bank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .acc-card { background: white; border-radius: 24px; padding: 1.5rem; border: 1px solid #f1f5f9; transition: 0.3s; }
@@ -169,14 +146,14 @@ $stats = $pdo->query("SELECT SUM(balance_usd) as total_usd, SUM(balance_cdf) as 
         <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
 
         <!-- Statistiques -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
             <div class="stat-card">
                 <div class="stat-icon stat-icon-blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-                <div><p class="stat-label">Total USD</p><p class="stat-value"><?= format_price_local($stats['total_usd'] ?? 0, 'USD') ?></p></div>
+                <div><p class="stat-label">Total USD</p><p class="stat-value"><?= format_price($stats['total_usd'] ?? 0, 'USD') ?></p></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon stat-icon-green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
-                <div><p class="stat-label">Total CDF</p><p class="stat-value"><?= format_price_local($stats['total_cdf'] ?? 0, 'CDF') ?></p></div>
+                <div><p class="stat-label">Total CDF</p><p class="stat-value"><?= format_price($stats['total_cdf'] ?? 0, 'CDF') ?></p></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon stat-icon-dark"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
@@ -194,14 +171,14 @@ $stats = $pdo->query("SELECT SUM(balance_usd) as total_usd, SUM(balance_cdf) as 
                 <div class="divider"></div>
                 <div class="acc-balance">
                     <span style="font-size:0.8rem; font-weight:700; color:#94a3b8;">Solde USD</span>
-                    <span class="val-usd"><?= format_price_local($acc['balance_usd'], 'USD') ?></span>
+                    <span class="val-usd"><?= format_price($acc['balance_usd'], 'USD') ?></span>
                 </div>
                 <div class="acc-balance">
                     <span style="font-size:0.8rem; font-weight:700; color:#94a3b8;">Solde CDF</span>
-                    <span class="val-cdf"><?= format_price_local($acc['balance_cdf'], 'CDF') ?></span>
+                    <span class="val-cdf"><?= format_price($acc['balance_cdf'], 'CDF') ?></span>
                 </div>
-                <div class="mt-4 flex gap-2">
-                    <button onclick="openTransModal(<?= $acc['id'] ?>, '<?= htmlspecialchars($acc['account_name']) ?>')" class="btn btn-primary btn-sm w-full">Opération</button>
+                <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+                    <button onclick="openTransModal(<?= $acc['id'] ?>, '<?= htmlspecialchars($acc['account_name']) ?>')" class="btn btn-primary btn-sm" style="width:100%;">Opération</button>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -224,7 +201,7 @@ $stats = $pdo->query("SELECT SUM(balance_usd) as total_usd, SUM(balance_cdf) as 
                             <td class="col-name"><?= htmlspecialchars($t['account_name']) ?></td>
                             <td><span class="badge <?= $t['type']==='deposit'?'badge-green':'badge-red' ?>"><?= $t['type']==='deposit'?'Dépôt':'Retrait' ?></span></td>
                             <td class="col-amount <?= $t['type']==='withdrawal'?'text-danger':'' ?>">
-                                <?= $t['type']==='deposit'?'+':'-' ?> <?= format_price_local($t['amount'], $t['currency']) ?>
+                                <?= $t['type']==='deposit'?'+':'-' ?> <?= format_price($t['amount'], $t['currency']) ?>
                             </td>
                             <td class="text-muted"><?= htmlspecialchars($t['description']) ?></td>
                         </tr>
