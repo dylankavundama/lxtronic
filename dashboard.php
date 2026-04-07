@@ -19,6 +19,17 @@ $debt_cdf = $pdo->query("SELECT SUM(total_debt_cdf) FROM clients")->fetchColumn(
 // Alertes stock
 $low_stock_count = $pdo->query("SELECT COUNT(*) FROM products WHERE stock_quantity <= min_stock_threshold")->fetchColumn() ?: 0;
 
+// Total Caisse (Total Cash - Toutes dates)
+$total_cash_sales_usd = $pdo->query("SELECT SUM(total_amount) FROM sales WHERE payment_type = 'comptant' AND currency = 'USD'")->fetchColumn() ?: 0;
+$total_debt_payments_usd = $pdo->query("SELECT SUM(amount_paid) FROM payments WHERE currency = 'USD'")->fetchColumn() ?: 0;
+$total_expenses_usd = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency = 'USD'")->fetchColumn() ?: 0;
+$total_caisse_usd = ($total_cash_sales_usd + $total_debt_payments_usd) - $total_expenses_usd;
+
+$total_cash_sales_cdf = $pdo->query("SELECT SUM(total_amount) FROM sales WHERE payment_type = 'comptant' AND currency = 'CDF'")->fetchColumn() ?: 0;
+$total_debt_payments_cdf = $pdo->query("SELECT SUM(amount_paid) FROM payments WHERE currency = 'CDF'")->fetchColumn() ?: 0;
+$total_expenses_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency = 'CDF'")->fetchColumn() ?: 0;
+$total_caisse_cdf = ($total_cash_sales_cdf + $total_debt_payments_cdf) - $total_expenses_cdf;
+
 $recent_sales = $pdo->query("SELECT s.*, c.name as client_name FROM sales s LEFT JOIN clients c ON s.client_id = c.id ORDER BY s.created_at DESC LIMIT 6")->fetchAll();
 
 // Données graphique : ventes des 7 derniers jours (équivalent USD)
@@ -54,6 +65,19 @@ $chart_data_js   = implode(',', $chart_data);
     <style>
         .stat-multi { display: flex; flex-direction: column; gap: 2px; }
         .stat-sub-val { font-size: 0.85rem; color: var(--color-slate-500); font-weight: 500; }
+        /* Toggle visibility styles */
+        .visibility-toggle {
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            color: var(--color-slate-400);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .visibility-toggle:hover { color: var(--color-primary); background: var(--color-slate-100); }
+        .amount-hidden { filter: blur(5px); pointer-events: none; user-select: none; }
+        .stat-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
     </style>
 </head>
 <body>
@@ -81,10 +105,27 @@ $chart_data_js   = implode(',', $chart_data);
                 <div class="stat-icon stat-icon-green">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
+                <div class="stat-multi" style="width:100%;">
+                    <div class="stat-header">
+                        <p class="stat-label">Ventes du jour</p>
+                        <span class="visibility-toggle" onclick="toggleDashboardAmounts()" title="Masquer/Afficher les montants">
+                            <svg id="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;"><path id="eye-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path id="eye-outer-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </span>
+                    </div>
+                    <h3 class="stat-value balance-value"><?= format_price($sales_usd, 'USD') ?></h3>
+                    <p class="stat-sub-val balance-value"><?= format_price($sales_cdf, 'CDF') ?></p>
+                </div>
+            </div>
+
+            <!-- Total Caisse (Added) -->
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fef3c7; color:#d97706;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                </div>
                 <div class="stat-multi">
-                    <p class="stat-label">Ventes du jour</p>
-                    <h3 class="stat-value"><?= format_price($sales_usd, 'USD') ?></h3>
-                    <p class="stat-sub-val"><?= format_price($sales_cdf, 'CDF') ?></p>
+                    <p class="stat-label">Ma Caisse (Total)</p>
+                    <h3 class="stat-value balance-value"><?= format_price($total_caisse_usd, 'USD') ?></h3>
+                    <p class="stat-sub-val balance-value"><?= format_price($total_caisse_cdf, 'CDF') ?></p>
                 </div>
             </div>
 
@@ -150,7 +191,7 @@ $chart_data_js   = implode(',', $chart_data);
                                 <p class="activity-name"><?= $s['client_name'] ?: 'Client au comptant' ?></p>
                                 <p class="activity-time"><?= date('H:i', strtotime($s['created_at'])) ?></p>
                             </div>
-                            <span class="activity-amount" style="color: <?= $s['status'] == 'dette' ? 'var(--color-danger)' : 'var(--color-success)' ?>;">
+                    <span class="activity-amount balance-value" style="color: <?= $s['status'] == 'dette' ? 'var(--color-danger)' : 'var(--color-success)' ?>;">
                                 <?= $s['status'] == 'dette' ? '(Crédit)' : '+' ?> <?= format_price($s['total_amount'], $s['currency']) ?>
                             </span>
                         </div>
@@ -193,6 +234,42 @@ $chart_data_js   = implode(',', $chart_data);
                 y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
                 x: { grid: { display: false }, border: { display: false } }
             }
+        }
+    });
+
+    // Dashboard Visibility Toggle
+    function toggleDashboardAmounts() {
+        const balances = document.querySelectorAll('.balance-value');
+        const eyeIconPath = document.getElementById('eye-path');
+        const eyeOuterPath = document.getElementById('eye-outer-path');
+        const isHidden = balances[0].classList.toggle('amount-hidden');
+        
+        // Propagate to all balance-value elements
+        balances.forEach(el => {
+            if (isHidden) el.classList.add('amount-hidden');
+            else el.classList.remove('amount-hidden');
+        });
+
+        // Update icon
+        if (isHidden) {
+            // Crossed eye
+            eyeIconPath.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18');
+            eyeOuterPath.style.display = 'none';
+        } else {
+            // Normal eye
+            eyeIconPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z');
+            eyeOuterPath.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
+            eyeOuterPath.style.display = 'block';
+        }
+        
+        // Store preference
+        localStorage.setItem('dashboard_amounts_hidden', isHidden);
+    }
+
+    // Restore preference on load
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('dashboard_amounts_hidden') === 'true') {
+            toggleDashboardAmounts();
         }
     });
 </script>
