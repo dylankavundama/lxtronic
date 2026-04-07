@@ -142,9 +142,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg btn-full" style="margin-top:0.5rem;">
-                    Se connecter
-                </button>
+                <a href="https://wa.me/243977734735" class="btn btn-primary btn-lg btn-full" style="margin-top:0.5rem; text-decoration: none; display: flex; justify-content: center; align-items: center;">
+                    plus d'info
+                </a>
             </form>
         </div>
 

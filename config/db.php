@@ -38,4 +38,23 @@ try {
     http_response_code(500);
     die(json_encode(['error' => 'Database connection failed.']));
 }
+
+function fx_log_error($level, $message, $file, $line) {
+    global $pdo;
+    if (!$pdo) return;
+    try {
+        $pdo->prepare("INSERT INTO system_logs (level, message, file, line) VALUES (?, ?, ?, ?)")
+            ->execute([$level, $message, $file, $line]);
+    } catch(\Exception $e) {}
+}
+
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    if (!(error_reporting() & $errno)) return; 
+    if (in_array($errno, [E_NOTICE, E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED])) return;
+    fx_log_error("WARNING_V ($errno)", $errstr, $errfile, $errline);
+});
+
+set_exception_handler(function($ex) {
+    fx_log_error("EXCEPTION", $ex->getMessage(), $ex->getFile(), $ex->getLine());
+});
 ?>

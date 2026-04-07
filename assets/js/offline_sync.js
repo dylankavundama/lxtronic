@@ -143,8 +143,14 @@ async function syncPendingActions() {
 
             if (!endpoint) continue;
 
+            // Indispensable pour que le backend sache qu'il doit retourner du JSON et non du HTML !
+            formData.append('is_ajax', '1');
+
             const res = await fetch(endpoint, {
                 method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                },
                 body: formData
             });
 

@@ -1,7 +1,7 @@
 <?php
 require_once 'config/db.php';
 require_once 'includes/helpers.php';
-require_admin();
+check_auth();
 
 $usd_to_cdf = (float)get_setting('usd_to_cdf', 2800);
 $filter = $_GET['filter'] ?? 'daily';
@@ -14,6 +14,10 @@ if ($filter === 'monthly') {
     $date_query = "YEAR(s.created_at)=YEAR(CURDATE())";
     $exp_date_query = "YEAR(expense_date)=YEAR(CURDATE())";
     $label = "cette année";
+} elseif ($filter === 'general') {
+    $date_query = "1=1";
+    $exp_date_query = "1=1";
+    $label = "depuis toujours";
 } else {
     $date_query = "DATE(s.created_at)=CURDATE()";
     $exp_date_query = "expense_date=CURDATE()";
@@ -61,6 +65,19 @@ $net_profit_usd = $profit_usd - $total_expenses_usd;
 $total_debt_usd = $pdo->query("SELECT SUM(total_debt_usd) + SUM(total_debt_cdf / $usd_to_cdf) FROM clients")->fetchColumn() ?: 0;
 $total_stock_value_usd = $pdo->query("SELECT SUM(stock_quantity * buy_price) FROM products")->fetchColumn() ?: 0;
 
+// Banque Solde (USD équivalent)
+$bank_usd = $pdo->query("SELECT SUM(balance_usd) + SUM(balance_cdf / $usd_to_cdf) FROM bank_accounts")->fetchColumn() ?: 0;
+
+// Caisse Solde (USD + CDF converti)
+$c_sales_usd = $pdo->query("SELECT SUM(total_amount) FROM sales WHERE payment_type='comptant' AND currency='USD'")->fetchColumn() ?: 0;
+$c_sales_cdf = $pdo->query("SELECT SUM(total_amount) FROM sales WHERE payment_type='comptant' AND currency='CDF'")->fetchColumn() ?: 0;
+$p_debt_usd = $pdo->query("SELECT SUM(amount_paid) FROM payments WHERE currency='USD'")->fetchColumn() ?: 0;
+$p_debt_cdf = $pdo->query("SELECT SUM(amount_paid) FROM payments WHERE currency='CDF'")->fetchColumn() ?: 0;
+$c_exp_usd = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='USD'")->fetchColumn() ?: 0;
+$c_exp_cdf = $pdo->query("SELECT SUM(amount) FROM expenses WHERE currency='CDF'")->fetchColumn() ?: 0;
+
+$total_caisse_usd = (($c_sales_usd + $p_debt_usd) - $c_exp_usd) + ((($c_sales_cdf + $p_debt_cdf) - $c_exp_cdf) / $usd_to_cdf);
+
 $top_products = $pdo->query("SELECT p.name, SUM(si.quantity) as qty FROM sale_items si JOIN products p ON si.product_id=p.id JOIN sales s ON si.sale_id=s.id WHERE $date_query GROUP BY p.id ORDER BY qty DESC LIMIT 5")->fetchAll();
 $history = $pdo->query("SELECT s.*, c.name as client_name, u.username as seller FROM sales s LEFT JOIN clients c ON s.client_id=c.id LEFT JOIN users u ON s.user_id=u.id WHERE $date_query ORDER BY s.created_at DESC")->fetchAll();
 $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
@@ -86,6 +103,7 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
                 <a href="?filter=daily" class="filter-btn <?= $filter==='daily'?'active':'' ?>">Journalier</a>
                 <a href="?filter=monthly" class="filter-btn <?= $filter==='monthly'?'active':'' ?>">Mensuel</a>
                 <a href="?filter=yearly" class="filter-btn <?= $filter==='yearly'?'active':'' ?>">Annuel</a>
+                <a href="?filter=general" class="filter-btn <?= $filter==='general'?'active':'' ?>">Général</a>
             </div>
         </header>
 
@@ -158,7 +176,6 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
             </div>
 
             <div class="card card-padded table-responsive">
-                <h3 class="section-title">Produits les plus vendus</h3>
                 <h3 class="section-title">Performance Globale</h3>
                 <div>
                     <p class="stat-label" style="margin-bottom:8px;">Dettes clients (Total Éq. USD)</p>
@@ -168,6 +185,16 @@ $max_qty = !empty($top_products) ? max(array_column($top_products,'qty')) : 1;
                 <div>
                     <p class="stat-label" style="margin-bottom:8px;">Valeur du stock (Achat USD)</p>
                     <p class="font-bold" style="font-size:1.2rem;color:var(--color-slate-700);"><?= format_price($total_stock_value_usd, 'USD') ?></p>
+                </div>
+                <hr class="divider">
+                <div>
+                    <p class="stat-label" style="margin-bottom:8px;">Solde Caisse (Éq. USD)</p>
+                    <p class="font-bold text-success" style="font-size:1.2rem;"><?= format_price($total_caisse_usd, 'USD') ?></p>
+                </div>
+                <hr class="divider">
+                <div>
+                    <p class="stat-label" style="margin-bottom:8px;">Solde Banque (Éq. USD)</p>
+                    <p class="font-bold text-primary" style="font-size:1.2rem;"><?= format_price($bank_usd, 'USD') ?></p>
                 </div>
                 
                 <hr class="divider">

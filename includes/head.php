@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="LxTronic">
 <link rel="apple-touch-icon" href="logo.jpg">
 
+
 <!-- Favicon -->
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="shortcut icon" type="image/jpeg" href="favicon.jpg">
